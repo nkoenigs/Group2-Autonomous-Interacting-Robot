@@ -126,6 +126,7 @@ def checkChatQueue():
 
 if __name__ == '__main__':
     alexaTh = th.Thread(target= app.run)
+    alexaTh.daemon = True
     cvTh = mp.Process(target= openCVController.run, args= (cvQueue, ))
     heartbeatTh = th.Thread(target= heartbeatController.run, args= (heartbeatQueue, ))
     chatTh = th.Thread(target= chatController.run, args= (chatQueue, ))
@@ -136,7 +137,8 @@ if __name__ == '__main__':
     allThreads.append(heartbeatTh)
     allThreads.append(chatTh)
     allThreads.append(chatQueueCheckTh)
-    allThreads.append(alexaTh)
+
+    alexaTh.start()
 
     for thread in allThreads:
         thread.start()
@@ -144,3 +146,6 @@ if __name__ == '__main__':
     for thread in allThreads:
         print("join")
         thread.join()
+    
+    print("exiting")
+    sys.exit()
