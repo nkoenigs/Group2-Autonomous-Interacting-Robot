@@ -113,11 +113,11 @@ def checkChatQueue():
             chatQueue.task_done()
             if request == "terminate":
                 chatQueue.put(request)
-            elif request == "recevedDistress":
+            elif request == "receivedDistress":
                 x_cord = chatQueue.get()
                 z_cord = chatQueue.get()
                 chatQueue.task_done()
-                chatQueue.task_done()=
+                chatQueue.task_done()
                 print("april follow to x,z = " + x_cord + " " + z_cord)
                 cvQueue.put("aprilFollow")
                 cvQueue.put(x_cord)
