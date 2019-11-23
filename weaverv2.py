@@ -118,7 +118,7 @@ def checkChatQueue():
                 z_cord = chatQueue.get()
                 chatQueue.task_done()
                 chatQueue.task_done()
-                print("april follow to x,z = " + x_cord + " " + z_cord)
+                print("april follow to x,z = " + str(x_cord) + " " + str(z_cord))
                 cvQueue.put("aprilFollow")
                 cvQueue.put(x_cord)
                 cvQueue.put(z_cord)
