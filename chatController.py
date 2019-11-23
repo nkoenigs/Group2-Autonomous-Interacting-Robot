@@ -62,9 +62,7 @@ def run(chatQueue):
                     if item == "terminate":
                         client_socket.close()                            
                         return
-                    if item == "sendDistress":
-                        print("HERE")
-                        time.sleep(0.5)
+                    if item == "sendDistress":                        
                         x = chatQueue.get()
                         chatQueue.task_done()
                         z = chatQueue.get()
