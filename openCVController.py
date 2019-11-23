@@ -72,7 +72,8 @@ class OpenCVController:
         while not connection_made:
             if os.path.exists('/dev/ttyUSB0'):
                 connection_made = True
-                ser = serial.Serial('/dev/ttyUSB0', 9600, timeout=1)
+                ser = serial.Serial('/dev/ttyUSB0', 9600, write_timeout=0)
+                print("Connected to Serial")
             if os.path.exists('/dev/ttyACM1'):
                 connection_made = True
                 ser = serial.Serial('/dev/ttyACM1', 115200, timeout=1)
@@ -357,12 +358,14 @@ def run(cvQueue: Queue):
             elif commandFromQueue == "aprilFollow":
                 # We know the next 2 items in the queue in this case are the x and z coordinates  - grab them
                 # Note: get() commands will block until it can get something
+                cvQueue.put("Receive april Tag request")
                 x_coordinate = cvQueue.get()
+                cvQueue.task_done()
                 z_coordinate = cvQueue.get()
                 cvQueue.task_done()
                 print("x = ", x_coordinate, " z = ", z_coordinate)
                 cvQueue.put("missionComplete")
-                cvQueue.join
+                cvQueue.join()
 
 
 if __name__ == "__main__":
