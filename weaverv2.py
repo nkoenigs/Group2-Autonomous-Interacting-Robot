@@ -125,16 +125,21 @@ def checkChatQueue():
                 # do the stuff to handle cv return after reaching dest
 
 if __name__ == '__main__':
+    allThreads = []
+
     alexaTh = th.Thread(target= app.run)
     cvTh = mp.Process(target= openCVController.run, args= (cvQueue, ))
-    heartbeatTh = th.Thread(target= heartbeatController.run, args= (heartbeatQueue, ))
+    try:
+        heartbeatTh = th.Thread(target= heartbeatController.run, args= (heartbeatQueue, ))
+        allThreads.append(heartbeatTh)
+    except:
+        heartbeatTh = None
+        print("error connecting to bluetooth")
     chatTh = th.Thread(target= chatController.run, args= (chatQueue, ))
     chatQueueCheckTh = th.Thread(target= checkChatQueue)
 
-    allThreads = []
     allThreads.append(alexaTh)
     allThreads.append(cvTh)
-    allThreads.append(heartbeatTh)
     allThreads.append(chatTh)
     allThreads.append(chatQueueCheckTh)
 
