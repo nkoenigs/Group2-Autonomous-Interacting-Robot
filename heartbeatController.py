@@ -6,14 +6,19 @@ import os
 import threading
 
 threadLock = threading.Lock()
+redFlag = False
 class HeartRate():
     MAC_ADDR = "C9:A1:81:64:BC:BB"
     band = None
     value = 0
     breakFlag = False
     def __init__(self):
-        print('Attempting to connect to ', self.MAC_ADDR)
-        self.band = MiBand3(self.MAC_ADDR, debug=True)
+        try:
+            print('Attempting to connect to ', self.MAC_ADDR)
+            self.band = MiBand3(self.MAC_ADDR, debug=True)
+        except:
+            print("Can't Connect Bluetooth")
+            redFlag = True
     
     #update the heart rate. This is just a callback function to update the value in this class
     #you don't need to call it
@@ -25,7 +30,8 @@ class HeartRate():
             threadLock.release()
 
     def run(self):
-        self.band.start_raw_data_realtime(heart_measure_callback=self.__update_heart_rate, heartRate=self)
+        if redFlag == False:
+            self.band.start_raw_data_realtime(heart_measure_callback=self.__update_heart_rate, heartRate=self)        
 
     #return a string with the current heart rate value
     def get_my_heart_rate(self):
@@ -35,7 +41,11 @@ class HeartRate():
             
     def start(self):
     # Authenticate the MiBand
-        self.band.authenticate()
+        try:
+            self.band.authenticate()
+        except:
+            redFlag = True
+            print("Failed to authenticate bluetooth")
     
     def change_flag(self, value):
         self.breakFlag = value
@@ -55,6 +65,9 @@ def update_value(heartRateObject):
 
 def process(heartRateObject, heartbeatQueue):
     while True:
+        if redFlag:
+            print("Close thread due to red flag")
+            return
         if not heartbeatQueue.empty():
             #termination case
             print('im ready to get item from queue')
@@ -73,8 +86,11 @@ def process(heartRateObject, heartbeatQueue):
                     
 
 def run(heartbeatQueue):    
-    heartRateObject = HeartRate()
+    heartRateObject = HeartRate()    
     heartRateObject.start()
+    time.delay(2)
+    if redFlag:
+       return
     t1 = threading.Thread(target=update_value, args=[heartRateObject], name="update") #This thread is for updating heart rate value
     t2 = threading.Thread(target=process, args=(heartRateObject, heartbeatQueue), name="process") #This thread is for listening to the request from queue and interact with the request
     t1.start()

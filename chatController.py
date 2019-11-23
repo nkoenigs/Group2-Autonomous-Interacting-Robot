@@ -104,8 +104,8 @@ def run(chatQueue):
                     if goal_x != recent_x and goal_z != recent_z:                        
                         recent_x = goal_x
                         recent_z = goal_z                    
-                        print("Receive Coordinate: ",goal_x,",",goal_z)
-                        chatQueue.put("receiveDistress")
+                        print("Received Coordinate: ",goal_x,",",goal_z)
+                        chatQueue.put("receivedDistress")
                         chatQueue.put(goal_x)
                         chatQueue.put(goal_z)
                         chatQueue.join()
