@@ -1,7 +1,7 @@
 import math
 
 #this is a list of [tag nums, distances] to travel to
-aprilTargets = ([2, 120], [37, 120])
+aprilTargets = ([2, 80], [37, 80])
 
 #finds the closes tag to a point
 def getClosestTag(x, z):
@@ -13,7 +13,7 @@ def getClosestTag(x, z):
         if dist < best_distance:
             best_distance = dist
             best_tag = i
-    return (best_tag, best_distance)
+    return (best_tag, 80)
 
 world_coords = {
     "0": [[0, 0, 0], [1, 0, 0], [1, -1, 0], [0, -1, 0]], 
