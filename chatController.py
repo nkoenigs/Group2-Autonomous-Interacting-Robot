@@ -2,7 +2,7 @@ import socket
 import sys
 import errno
 import threading
-
+import time
 
 my_username = "WoodyRobot"
 
@@ -39,7 +39,7 @@ client_socket.send(username_header + username)
 
 def send(x, z):
     # Encode message to bytes, prepare header and convert to bytes, like for username above, then send    
-    message = "{my_username} > distress: {},{}".format(x, z).encode('utf-8')
+    message = "{} > distress: {},{}".format(my_username, x, z).encode('utf-8')
     message_header = create_header(len(message), HEADER_LENGTH).encode('utf-8')
     client_socket.send(message_header + message)
 
@@ -55,18 +55,21 @@ def run(chatQueue):
             # Now we want to loop over received messages (there might be more than one) and print them
             while True:
                 # if queue is empty we check for distress signal
-                # if queue is not empty we have several case such as: terminate, send(x,z)
-                item = None                
+                # if queue is not empty we have several case such as: terminate, send(x,z)                    
                 if not chatQueue.empty():
-                    item = chatQueue.get()
-                    if type(item) == str:
-                        if item == "terminate":
-                            client_socket.close()                            
-                            return
-                        if item == "sendDistress":
-                            x = chatQueue.get()
-                            z = chatQueue.get()
-                            send(x,z)
+                    item = chatQueue.get()   
+                    chatQueue.task_done()                 
+                    if item == "terminate":
+                        client_socket.close()                            
+                        return
+                    if item == "sendDistress":
+                        print("HERE")
+                        time.sleep(0.5)
+                        x = chatQueue.get()
+                        chatQueue.task_done()
+                        z = chatQueue.get()
+                        chatQueue.task_done()
+                        send(x,z)
 
 
                 # Receive our "header" containing username length, it's size is defined and constant
@@ -106,6 +109,7 @@ def run(chatQueue):
                         chatQueue.put("receiveDistress")
                         chatQueue.put(goal_x)
                         chatQueue.put(goal_z)
+                        chatQueue.join()
                         while not chatQueue.empty():
                             pass #keep looping until the value is taken
 
