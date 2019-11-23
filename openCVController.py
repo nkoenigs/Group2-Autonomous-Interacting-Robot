@@ -52,7 +52,7 @@ class OpenCVController:
     greenUpper = np.array([85, 255, 255])
 
     def __init__(self):
-        self.serialPort = self.com_connect() if False else None  # TODO True for running - False for testing
+        self.serialPort = self.com_connect() if True else None  # TODO True for running - False for testing
         # Variables to hold last command sent to Arduino and when it was sent (epoch seconds)
         self.lastCommandSentViaSerial = None
         self.lastCommandSentViaSerialTime = None
