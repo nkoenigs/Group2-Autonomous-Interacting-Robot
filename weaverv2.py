@@ -63,7 +63,7 @@ def testComunications():
 def trackMe():
     cvQueue.put("personFollow")
     cvQueue.join()
-    return statement('Im following you now. Please do not run')
+    return statement('I\'m following you now. Please do not run')
 
 @ask.intent('lookAtMe')
 def lookAtMe():
@@ -91,7 +91,7 @@ def callForHelp():
     chatQueue.put(x_cord)
     chatQueue.put(z_cord)
     chatQueue.join()
-    return statement('distress signal sent')
+    return statement('Distress signal sent')
 
 @ask.intent('getHeartbeat')
 def getHeartbeat():
@@ -99,7 +99,7 @@ def getHeartbeat():
     while not heartbeatQueue.empty():
         pass
     heartrate = heartbeatQueue.get()
-    return statement("Your heartrate is " + str(heartrate))
+    return statement("Your heartrate is " + str(heartrate) + " beats per minute")
 
 def checkChatQueue():
     threadActive = True
