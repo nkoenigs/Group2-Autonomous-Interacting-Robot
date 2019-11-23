@@ -9,6 +9,7 @@ from flask_ask import Ask, statement, question
 import openCVController
 import heartbeatController
 import chatController
+import aprilTags
 
 # this file calls all others as threads then moves data from queue
 
@@ -118,9 +119,15 @@ def checkChatQueue():
                 z_cord = chatQueue.get()
                 chatQueue.task_done()
                 chatQueue.task_done()
+                for target_tuple in aprilTags.aprilTargets:
+                    cvQueue.put("aprilFollow")
+                    cvQueue.put(target_tuple[0])
+                    cvQueue.put(target_tuple[1])
+                    cvQueue.join()
+                final_target  = aprilTags.getClosestTag(x_cord, z_cord)
                 cvQueue.put("aprilFollow")
-                cvQueue.put(x_cord)
-                cvQueue.put(z_cord)
+                cvQueue.put(final_target[0])
+                cvQueue.put(final_target[1])
                 cvQueue.join()
 
 if __name__ == '__main__':
