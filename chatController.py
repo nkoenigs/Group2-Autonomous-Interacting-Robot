@@ -47,7 +47,7 @@ def send(x, z):
 #used to be receive
 def run(chatQueue):        
     goal_x = 0
-    goal_z = 0
+    goal_z = 0	
     recent_x = 0
     recent_z = 0    
     while True:        
@@ -61,6 +61,7 @@ def run(chatQueue):
                     chatQueue.task_done()                 
                     if item == "terminate":
                         client_socket.close()                            
+                        print("Terminate chat controller")
                         return
                     if item == "sendDistress":                        
                         x = chatQueue.get()
