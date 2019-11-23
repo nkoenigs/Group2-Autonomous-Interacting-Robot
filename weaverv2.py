@@ -61,9 +61,9 @@ def testComunications():
 
 @ask.intent('trackMe')
 def trackMe():
-	cvQueue.put("personFollow")
+    cvQueue.put("personFollow")
     cvQueue.join()
-	return statement('Im following you now. Please do not run')
+    return statement('Im following you now. Please do not run')
 
 @ask.intent('lookAtMe')
 def lookAtMe():
@@ -73,9 +73,9 @@ def lookAtMe():
 
 @ask.intent('stopActing')
 def stopActing():
-	cvQueue.put("halt")
+    cvQueue.put("halt")
     cvQueue.join()
-	return statement('Im done following you')
+    return statement('Im done following you')
 
 @ask.intent('callForHelp')
 def callForHelp():
