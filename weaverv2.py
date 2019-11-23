@@ -142,4 +142,5 @@ if __name__ == '__main__':
         thread.start()
 
     for thread in allThreads:
+        print("join")
         thread.join()
