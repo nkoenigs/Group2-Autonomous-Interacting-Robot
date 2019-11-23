@@ -336,16 +336,17 @@ def run(cvQueue: Queue):
             cvQueue.task_done()
             if commandFromQueue == "terminate":
                 cvObject.cleanup_resources()
-                break
+                print("Terminate OpenCV")
+                return                
             elif commandFromQueue == "halt":
                 cvObject.send_serial_command(Direction.STOP, b'h');
                 print("Sent halt command")
             elif commandFromQueue == "getCoordinates":                
                 print("got command getCoordinates")
-                coordinates_tuple = cvObject.get_coordinates()
+                x,z = cvObject.get_coordinates()
                 print("sending coordinates")
-                cvQueue.put(11)
-                cvQueue.put(12)
+                cvQueue.put(x)
+                cvQueue.put(z)
                 cvQueue.join()
                 #while not cvQueue.empty():  # Wait here until the queue gets emptied
                 #    pass
