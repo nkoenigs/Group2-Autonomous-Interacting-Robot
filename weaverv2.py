@@ -139,10 +139,7 @@ if __name__ == '__main__':
     allThreads.append(chatQueueCheckTh)
 
     for thread in allThreads:
-        try:
-            thread.start()
-        except:
-            print("error starting thread")
+        thread.start()
 
     for thread in allThreads:
         thread.join()
