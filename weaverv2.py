@@ -132,11 +132,11 @@ if __name__ == '__main__':
     chatQueueCheckTh = th.Thread(target= checkChatQueue)
 
     allThreads = []
-    allThreads.append(alexaTh)
     allThreads.append(cvTh)
     allThreads.append(heartbeatTh)
     allThreads.append(chatTh)
     allThreads.append(chatQueueCheckTh)
+    allThreads.append(alexaTh)
 
     for thread in allThreads:
         thread.start()
