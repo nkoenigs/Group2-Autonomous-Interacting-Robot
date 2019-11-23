@@ -118,12 +118,10 @@ def checkChatQueue():
                 z_cord = chatQueue.get()
                 chatQueue.task_done()
                 chatQueue.task_done()
-                print("april follow to x,z = " + str(x_cord) + " " + str(z_cord))
                 cvQueue.put("aprilFollow")
                 cvQueue.put(x_cord)
                 cvQueue.put(z_cord)
                 cvQueue.join()
-                # do the stuff to handle cv return after reaching dest
 
 if __name__ == '__main__':
     alexaTh = th.Thread(target= app.run)
@@ -145,7 +143,6 @@ if __name__ == '__main__':
         thread.start()
 
     for thread in allThreads:
-        print("join")
         thread.join()
     
     print("exiting")
