@@ -7,12 +7,13 @@ aprilTargets = ([2, 40], [46, 80], [37, 80])
 def getClosestTag(x, z):
     best_distance = 100000
     for i in range(0, 49): #TODO change this range to exclude undesirable endgame tags (aka in the room)
-        full_tag_dat = world_coords[str(i)]
-        tag_loc = (full_tag_dat[0][0], full_tag_dat[0][2])
-        dist = math.sqrt(pow(x - tag_loc[0], 2) + pow(z - tag_loc[1], 2))
-        if dist < best_distance:
-            best_distance = dist
-            best_tag = i
+        if str(i) in keys:
+            full_tag_dat = world_coords[str(i)]
+            tag_loc = (full_tag_dat[0][0], full_tag_dat[0][2])
+            dist = math.sqrt(pow(x - tag_loc[0], 2) + pow(z - tag_loc[1], 2))
+            if dist < best_distance:
+                best_distance = dist
+                best_tag = i
     print("selected target:" + best_tag)
     return (best_tag, 80)
 
@@ -47,3 +48,5 @@ world_coords = {
     "47": [[-15, 0, 0], [-14, 0, 0], [-14, -1, 0], [-15, -1, 0]], 
     "48": [[-10, 0, 0], [-9, 0, 0], [-9, -1, 0], [-10, -1, 0]], 
     "49": [[-5, 0, 0], [-4, 0, 0], [-4, -1, 0], [-5, -1, 0]]}
+
+keys = world_coords.keys()
