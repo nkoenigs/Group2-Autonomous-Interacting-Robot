@@ -1,7 +1,7 @@
 import math
 
 #this is a list of [tag nums, distances] to travel to
-aprilTargets = ([2, 40], [46, 80], [37, 80])
+aprilTargets = ([2, 70], [46, 80], [37, 80])
 
 #finds the closes tag to a point
 def getClosestTag(x, z):
