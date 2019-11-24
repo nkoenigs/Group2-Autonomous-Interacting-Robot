@@ -9,5 +9,6 @@ elif commandFromQueue == "aprilFollow":
                 cvQueue.put("Receive april Tag request")
                 target_tag_number = cvQueue.get()
                 target_tag_radius = cvQueue.get()
+                cvObject.april_following(target_tag_number, target_tag_radius, cvQueue)
                 cvQueue.task_done()
-                # have nikil call cvQueue.task_done() after he reaches his target (this will join weaver)
+		cvQueue.task_done()

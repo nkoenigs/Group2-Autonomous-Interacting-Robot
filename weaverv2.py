@@ -119,16 +119,21 @@ def checkChatQueue():
                 z_cord = chatQueue.get()
                 chatQueue.task_done()
                 chatQueue.task_done()
-                for target_tuple in aprilTags.aprilTargets:
-                    cvQueue.put("aprilFollow")
-                    cvQueue.put(target_tuple[0])
-                    cvQueue.put(target_tuple[1])
-                    cvQueue.join()
-                final_target  = aprilTags.getClosestTag(x_cord, z_cord)
-                cvQueue.put("aprilFollow")
-                cvQueue.put(final_target[0])
-                cvQueue.put(final_target[1])
-                cvQueue.join()
+                aprilTh = th.Thread(target= aprilController, args= (x_cord, z_cord, ))
+                aprilTh.daemon = True
+                aprilTh.start()
+
+def aprilController(x_cord, z_cord):
+    for target_tuple in aprilTags.aprilTargets:
+        cvQueue.put("aprilFollow")
+        cvQueue.put(target_tuple[0])
+        cvQueue.put(target_tuple[1])
+        cvQueue.join()
+    final_target  = aprilTags.getClosestTag(x_cord, z_cord)
+    cvQueue.put("aprilFollow")
+    cvQueue.put(final_target[0])
+    cvQueue.put(final_target[1])
+    cvQueue.join()
 
 if __name__ == '__main__':
     alexaTh = th.Thread(target= app.run)
