@@ -165,6 +165,7 @@ class OpenCVController:
                         # We've sent the command now wait half a second and then send a halt
                         time.sleep(0.5)
                         self.send_serial_command(Direction.STOP, b'h');
+                        time.sleep(0.5)
                     else: # Keep waiting - 2 seconds haven't elapsed
                         self.send_serial_command(Direction.STOP, b'h');
                         commandString = "STOP";
