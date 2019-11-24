@@ -1,7 +1,7 @@
 import math
 
 #this is a list of [tag nums, distances] to travel to
-aprilTargets = ([2, 120], [46, 80], [37, 80])
+aprilTargets = ([2, 200], [46, 80], [37, 80])
 
 #finds the closes tag to a point
 def getClosestTag(x, z):
@@ -9,7 +9,7 @@ def getClosestTag(x, z):
     for i in range(0, 49): #TODO change this range to exclude undesirable endgame tags (aka in the room)
         full_tag_dat = world_coords[str(i)]
         tag_loc = (full_tag_dat[0][0], full_tag_dat[0][2])
-        dist = math.sqrt(pow(x - tag_loc[0], 2) + pow(z - tag_loc[1]))
+        dist = math.sqrt(pow(x - tag_loc[0], 2) + pow(z - tag_loc[1], 2))
         if dist < best_distance:
             best_distance = dist
             best_tag = i

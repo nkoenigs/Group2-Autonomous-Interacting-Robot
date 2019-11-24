@@ -161,6 +161,10 @@ class OpenCVController:
                         else:  # variable hasn't been set yet (seems unlikely), but default to left
                             self.send_serial_command(Direction.LEFT, b'l');
                             commandString = "DEFAULT SEARCHING: GO LEFT"
+
+                        # We've sent the command now wait half a second and then send a halt
+                        time.sleep(0.5)
+                        self.send_serial_command(Direction.STOP, b'h');
                     else: # Keep waiting - 2 seconds haven't elapsed
                         self.send_serial_command(Direction.STOP, b'h');
                         commandString = "STOP";
