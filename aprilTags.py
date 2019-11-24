@@ -14,7 +14,7 @@ def getClosestTag(x, z):
             if dist < best_distance:
                 best_distance = dist
                 best_tag = i
-    print("selected target:" + best_tag)
+    print("selected target:" + str(best_tag))
     return (best_tag, 80)
 
 world_coords = {
