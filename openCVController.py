@@ -20,6 +20,8 @@ import os
 from enum import Enum
 import pygame
 from pygame.locals import *
+import json
+import apriltag
 
 
 # Class/Enums to keep track of directions sent or to send down to Arduino via Serial communication
@@ -41,12 +43,6 @@ class OpenCVController:
     # Font for text on webcam display
     font = cv2.FONT_HERSHEY_SIMPLEX
 
-    # Frame is considered to be 600x600 (after resize)
-    # Below are varibles to set what we consider center and in-range
-    radiusInRangeLowerBound, radiusInRangeUpperBound = 80, 120
-    centerRightBound, centerLeftBound = 400, 200
-    radiusTooCloseLowerLimit = 250
-
     # Define lower & upper boundaries in HSV color space (for object following/tracking)
     greenLower = np.array([48, 100, 50])
     greenUpper = np.array([85, 255, 255])
@@ -60,8 +56,8 @@ class OpenCVController:
         self.vs = WebcamVideoStream(src=1).start()
         time.sleep(2.0)
         # TODO need some way to kill my loops nicely - how about these 2 lines below?
-        #self.runningPersonFollowing = False
-        #self.runningAprilFollowing = False
+        # self.runningPersonFollowing = False
+        # self.runningAprilFollowing = False
 
     # TODO remove the timeout in serial setting ... confirm it doesn't do anythin, then add write_timeout=0 (
     #  nonblocking)
@@ -99,13 +95,163 @@ class OpenCVController:
         cv2.destroyAllWindows()
         self.vs.stop()
 
-    def april_following(self):
-        pass
+    def april_following(self, desiredTag, desiredDistance, cvQueue: Queue):
+
+        # Frame is considered to be 600x600 (after resize)
+        # Below are variables to set what we consider center and in-range
+        radiusInRangeLowerBound, radiusInRangeUpperBound = desiredDistance-20, desiredDistance+20
+        centerRightBound, centerLeftBound = 400, 200
+        radiusTooCloseLowerLimit = 250
+
+        # Creating a window for later use
+        cv2.namedWindow('result')
+        cv2.resizeWindow('result', 600, 600)
+
+        # Variables to 'smarten' the following procedure
+        objectSeenOnce = False  # Object has never been seen before
+        leftOrRightLastSent = None  # Keep track of whether we sent left or right last
+
+        # Initialize apriltag detector
+        det = apriltag.Detector()
+        firstTimeObjectNotSeen = None;
+        # TODO delete this block when done
+        start = time.time();
+        num_frames = 0;
+
+        while True:
+            # Grab frame - break if we don't get it (some unknown error occurred)
+            frame = self.vs.read()
+            if frame is None:
+                break
+            # TODO delete this block when done
+            end = time.time();
+            seconds = end - start;
+            num_frames += 1;
+            fps = 0 if (seconds == 0) else num_frames / seconds;
+
+            frame = imutils.resize(frame, width=600)
+            # Use grayscale image for detection
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            res = det.detect(gray)
+
+            commandString = None
+
+            tagObject = None
+            for r in res:
+                if r.tag_id == desiredTag:
+                    tagObject = r
+
+            if tagObject is None:  # We don't see the tag
+                # Don't see the tag? Possibly just bad frame, lets wait 2 seconds and then start turning
+                if firstTimeObjectNotSeen is None:
+                    firstTimeObjectNotSeen = time.time()
+                    self.send_serial_command(Direction.STOP, b'h')
+                    commandString = "STOP";
+                else:
+                    secondsOfNoTag = time.time() - firstTimeObjectNotSeen
+                    if secondsOfNoTag > 2: # Haven't seen our tag for more than 2 seconds
+                        if leftOrRightLastSent is not None:
+                            if leftOrRightLastSent == Direction.RIGHT:
+                                self.send_serial_command(Direction.RIGHT, b'r');
+                                commandString = "SEARCHING: GO RIGHT"
+                            elif leftOrRightLastSent == Direction.LEFT:
+                                self.send_serial_command(Direction.LEFT, b'l');
+                                commandString = "SEARCHING: GO LEFT"
+                        else:  # variable hasn't been set yet (seems unlikely), but default to left
+                            self.send_serial_command(Direction.LEFT, b'l');
+                            commandString = "DEFAULT SEARCHING: GO LEFT"
+                    else: # Keep waiting - 2 seconds haven't elapsed
+                        self.send_serial_command(Direction.STOP, b'h');
+                        commandString = "STOP";
+
+            else:  # We see the tag!
+
+                inPosition = False
+
+                # Reset firstTimeObjectNotSeen to None for the next time we can't find the tag
+                if firstTimeObjectNotSeen is not None:
+                    firstTimeObjectNotSeen = None
+
+                # Set objectSeenOnce to True if isn't already
+                if not objectSeenOnce:
+                    objectSeenOnce = True
+
+                # Get the corners and draw a minimally enclosing circle of it
+                # and get the x/y/radius information to use in navigation
+                corners = np.array(tagObject.corners, dtype=np.float32).reshape((4, 2, 1))
+                cornersList = []
+                for c in corners:
+                    cornersList.append([int(x) for x in c])
+                cornersList = np.array(cornersList, dtype=np.int32)
+                ((x, y), radius) = cv2.minEnclosingCircle(cornersList)
+                M = cv2.moments(cornersList)
+                center = (int(M["m10"] / M["m00"]), int(M["m01"] / M["m00"]))
+                filteredPtsRadius = [radius]
+                filteredPtsX = [center[0]]
+                filteredPtsY = [center[1]]
+
+                # Draw circle and center
+                cv2.circle(frame, (int(x), int(y)), int(filteredPtsRadius[0]), (0, 255, 255), 2)
+                cv2.circle(frame, center, 5, (0, 0, 255), -1)
+
+                if filteredPtsRadius[0] > radiusTooCloseLowerLimit:
+                    commandString = "MOVE BACKWARD - TOO CLOSE TO TURN"
+                    self.send_serial_command(Direction.BACKWARD, b'b')
+                elif filteredPtsX[0] > centerRightBound:
+                    commandString = "GO RIGHT"
+                    self.send_serial_command(Direction.RIGHT, b'r')
+                    if leftOrRightLastSent != Direction.RIGHT:
+                        leftOrRightLastSent = Direction.RIGHT
+                elif filteredPtsX[0] < centerLeftBound:
+                    commandString = "GO LEFT"
+                    self.send_serial_command(Direction.LEFT, b'l')
+                    if leftOrRightLastSent != Direction.LEFT:
+                        leftOrRightLastSent = Direction.LEFT
+                elif filteredPtsRadius[0] < radiusInRangeLowerBound:
+                    commandString = "MOVE FORWARD"
+                    self.send_serial_command(Direction.FORWARD, b'f')
+                elif filteredPtsRadius[0] > radiusInRangeUpperBound:
+                    commandString = "MOVE BACKWARD"
+                    self.send_serial_command(Direction.BACKWARD, b'b')
+                elif radiusInRangeLowerBound < filteredPtsRadius[0] < radiusInRangeUpperBound:
+                    commandString = "STOP MOVING - IN RANGE"
+                    self.send_serial_command(Direction.STOP, b'h')
+                    inPosition = True
+
+                # Put text on the camera image to display on the screen
+                cv2.putText(frame, 'center coordinate: (' + str(filteredPtsX[0]) + ',' + str(filteredPtsY[0]) + ')',
+                            (10, 60), self.font, 0.5, (200, 255, 155), 1, cv2.LINE_AA)
+                cv2.putText(frame, 'filtered radius: (' + str(filteredPtsRadius[0]) + ')', (10, 90), self.font, 0.5,
+                            (200, 255, 155), 1, cv2.LINE_AA)
+
+            # Show FPS (TODO delete this later)
+            cv2.putText(frame, commandString, (10, 30), self.font, 0.5, (200, 255, 155), 1, cv2.LINE_AA)
+            cv2.putText(frame, 'FPS: (' + str(fps) + ')', (10, 120), self.font, 0.5,
+                        (200, 255, 155), 1, cv2.LINE_AA)
+
+            # Display frame
+            cv2.imshow("result", frame)
+
+            # Close application on 'q' key press
+            # Infinite loop has been broken out of ... teardown now
+            # Release the camera & close all windows
+            key = cv2.waitKey(1) & 0xFF
+            if (key == ord("q")) or (not cvQueue.empty()) or inPosition:
+                # We've been requested to leave ...
+                # Dont destroy everything - just destroy cv2 windows ... webcam still runs
+                cv2.destroyAllWindows()
+                break
 
     def get_coordinates(self):
         return (1, 2)
 
     def person_following(self, run_py_eyes, cvQueue: Queue):
+
+        # Frame is considered to be 600x600 (after resize)
+        # Below are variables to set what we consider center and in-range
+        radiusInRangeLowerBound, radiusInRangeUpperBound = 80, 120
+        centerRightBound, centerLeftBound = 400, 200
+        radiusTooCloseLowerLimit = 250
 
         # Creating a window for later use
         cv2.namedWindow('result')
@@ -239,26 +385,26 @@ class OpenCVController:
                     # 3. Moving Forward/Backward
                     # Why? Because if we're too close any turn would be too extreme. We need to take care of that first
 
-                    if filteredPtsRadius[0] > self.radiusTooCloseLowerLimit:
+                    if filteredPtsRadius[0] > radiusTooCloseLowerLimit:
                         commandString = "MOVE BACKWARD - TOO CLOSE TO TURN"
                         self.send_serial_command(Direction.BACKWARD, b'b')
-                    elif filteredPtsX[0] > self.centerRightBound:
+                    elif filteredPtsX[0] > centerRightBound:
                         commandString = "GO RIGHT"
                         self.send_serial_command(Direction.RIGHT, b'r')
                         if leftOrRightLastSent != Direction.RIGHT:
                             leftOrRightLastSent = Direction.RIGHT
-                    elif filteredPtsX[0] < self.centerLeftBound:
+                    elif filteredPtsX[0] < centerLeftBound:
                         commandString = "GO LEFT"
                         self.send_serial_command(Direction.LEFT, b'l')
                         if leftOrRightLastSent != Direction.LEFT:
                             leftOrRightLastSent = Direction.LEFT
-                    elif filteredPtsRadius[0] < self.radiusInRangeLowerBound:
+                    elif filteredPtsRadius[0] < radiusInRangeLowerBound:
                         commandString = "MOVE FORWARD"
                         self.send_serial_command(Direction.FORWARD, b'f')
-                    elif filteredPtsRadius[0] > self.radiusInRangeUpperBound:
+                    elif filteredPtsRadius[0] > radiusInRangeUpperBound:
                         commandString = "MOVE BACKWARD"
                         self.send_serial_command(Direction.BACKWARD, b'b')
-                    elif self.radiusInRangeLowerBound < filteredPtsRadius[0] < self.radiusInRangeUpperBound:
+                    elif radiusInRangeLowerBound < filteredPtsRadius[0] < radiusInRangeUpperBound:
                         commandString = "STOP MOVING - IN RANGE"
                         self.send_serial_command(Direction.STOP, b'h')
 
@@ -328,8 +474,8 @@ def run(cvQueue: Queue):
     # (threaded)
     cvObject = OpenCVController()
 
-    #person_following_thread: Thread = None  # Keep track of threads
-    #april_following_thread: Thread = None
+    # person_following_thread: Thread = None  # Keep track of threads
+    # april_following_thread: Thread = None
 
     while True:
         if not cvQueue.empty():  # If there's something in the queue
@@ -338,40 +484,38 @@ def run(cvQueue: Queue):
             if commandFromQueue == "terminate":
                 cvObject.cleanup_resources()
                 print("Terminate OpenCV")
-                return                
+                return
             elif commandFromQueue == "halt":
                 cvObject.send_serial_command(Direction.STOP, b'h');
                 print("Sent halt command")
-            elif commandFromQueue == "getCoordinates":                
+            elif commandFromQueue == "getCoordinates":
                 print("got command getCoordinates")
-                x,z = cvObject.get_coordinates()
+                x, z = cvObject.get_coordinates()
                 print("sending coordinates")
                 cvQueue.put(x)
                 cvQueue.put(z)
                 cvQueue.join()
-                #while not cvQueue.empty():  # Wait here until the queue gets emptied
+                # while not cvQueue.empty():  # Wait here until the queue gets emptied
                 #    pass
             elif commandFromQueue == "personFollow":
                 cvObject.person_following(False, cvQueue)
             elif commandFromQueue == "eyeballFollow":
                 cvObject.person_following(True, cvQueue)
             elif commandFromQueue == "aprilFollow":
-                # We know the next 2 items in the queue in this case are the x and z coordinates  - grab them
-                # Note: get() commands will block until it can get something
+                # We know the next 2 items in the queue in this case are the x and z coordinates - grab them
+                #  Note: get() commands will block until it can get something
                 cvQueue.put("Receive april Tag request")
-                x_coordinate = cvQueue.get()
+                target_tag_number = cvQueue.get()
+                target_tag_radius = cvQueue.get()
+                cvObject.april_following(target_tag_number, target_tag_radius, cvQueue)
                 cvQueue.task_done()
-                z_coordinate = cvQueue.get()
                 cvQueue.task_done()
-                print("x = ", x_coordinate, " z = ", z_coordinate)
-                cvQueue.put("missionComplete")
-                cvQueue.join()
 
 
 if __name__ == "__main__":
-    #classObject = OpenCVController()
-    #classObject.runningPersonFollowing = True
-    #classObject.person_following(True)
+    # classObject = OpenCVController()
+    # classObject.runningPersonFollowing = True
+    # classObject.person_following(True)
 
     cvQueue = Queue()
     cvQueue.put("personFollow")
