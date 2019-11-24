@@ -117,6 +117,7 @@ class OpenCVController:
         # TODO delete this block when done
         start = time.time();
         num_frames = 0;
+        inPosition = False
 
         while True:
             # Grab frame - break if we don't get it (some unknown error occurred)
@@ -165,8 +166,6 @@ class OpenCVController:
                         commandString = "STOP";
 
             else:  # We see the tag!
-
-                inPosition = False
 
                 # Reset firstTimeObjectNotSeen to None for the next time we can't find the tag
                 if firstTimeObjectNotSeen is not None:
