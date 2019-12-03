@@ -25,9 +25,12 @@ import math
 import smtplib
 import os
 import urllib.request
-from email.mime.multipart import MIMEMultipart
+import smtplib
 from email.mime.text import MIMEText
-from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.application import MIMEApplication
+from os.path import basename
+from urllib.request import urlopen
 
 # Class/Enums to keep track of directions sent or to send down to Arduino via Serial communication
 class Direction(Enum):
@@ -85,7 +88,7 @@ class OpenCVController:
     @staticmethod
     def internet_on():
       try:
-        urllib.urlopen('http://216.58.192.142', timeout = 1)
+        urlopen('http://216.58.192.142', timeout = 1)
         return True
       except urllib2.URLError as err:
         return False
@@ -127,7 +130,33 @@ class OpenCVController:
         if self.serialPort is not None:  # Close serialPort if it exists
             self.serialPort.close()  # TODO make sure this doesn't ruin anything
 
-    def take_photo(self):
+    @staticmethod
+    def send_mail(send_from: str, subject: str, text: str, send_to: list, files= None):
+        username = 'UmdJetson2@gmail.com'
+        password = 'jetson1994'
+        msg = MIMEMultipart()
+        msg['From'] = send_from
+        msg['To'] = ', '.join(send_to)  
+        msg['Subject'] = subject
+
+        msg.attach(MIMEText(text))
+
+        for f in files or []:
+            with open(f, "rb") as fil: 
+                ext = f.split('.')[-1:]
+                attachedfile = MIMEApplication(fil.read(), _subtype = ext)
+                attachedfile.add_header(
+                    'content-disposition', 'attachment', filename=basename(f) )
+            msg.attach(attachedfile)
+
+
+        smtp = smtplib.SMTP(host="imap.gmail.com", port= 587) 
+        smtp.starttls()
+        smtp.login(username,password)
+        smtp.sendmail(send_from, send_to, msg.as_string())
+        smtp.close()
+
+    def take_photo(self, cvQueue: Queue):
         
         # Creating a window for later use
         cv2.namedWindow('result')
@@ -150,29 +179,28 @@ class OpenCVController:
             
             if timeDiff < waitTimeSec: # TODO <= ?
                 # Put time countdown on the frame (TODO resize)
-                cv2.putText(frame, strSec[timeDiff], (10, 30), self.font, 0.5, (200, 255, 155), 1, cv2.LINE_AA)
+                cv2.putText(frame, strSec[timeDiff], (250, 300), self.font, 5, (200, 255, 155), 4, cv2.LINE_AA)
                 cv2.imshow("result", frame)
             else: # Time's up - take the photo and do post-processing
                 cv2.imshow("result", frame)
                 time.sleep(1) # So it's obvious photo was taken
                 cv2.imwrite(filename='saved_img_' + str(self.imageNumber) + '.jpg', img=frame)
-                self.imageNumber += 1 # Increment for next possible photo
+                
                 cv2.destroyAllWindows() # Close the CV windows
+                
                 # Send email
-                msg = MIMEMultipart()
-                msg.attach(MIMEImage(file('saved_img_' + str(self.imageNumber) + '.jpg').read()))
-                conn = smtplib.SMTP('imap.gmail.com', 587)
-                conn.ehlo()
-                conn.starttls()
-                conn.login('UmdJetson2@gmail.com', 'jetson1994')
-                #conn.sendmail('UmdJetson2@gmail.com', 'huy1994@gmail.com', IPAddr)
-                #time.sleep(1)
-                #conn.sendmail('UmdJetson2@gmail.com', 'ndkoenigsmark@gmail.com', IPAddr)
-                #time.sleep(1)
-                conn.sendmail('UmdJetson2@gmail.com', 'nikhilu@terpmail.umd.edu', msg.as_string())
-                conn.quit()
+                username = 'UmdJetson2@gmail.com'
+                password = 'jetson1994'
+                sendList = ['nikhilu@terpmail.umd.edu', 
+                            'ndkoenigsmark@gmail.com',
+                            'huy1994@gmail.com'] 
+                filesToSend = [os.path.abspath('saved_img_' + str(self.imageNumber) + '.jpg')]
+                #if self.internet_on():
+                self.send_mail(send_from = username, subject = "test", text = "text", send_to = sendList, files = filesToSend)
+                #else:
+                #    print("Internet is not on - did not send email")
+                self.imageNumber += 1 # Increment for next possible photo
                 break
-                #  and send via email here (actually send it once out of the loop
 
             # Close application on 'q' key press or if new stuff added to queue
             key = cv2.waitKey(1) & 0xFF
@@ -362,6 +390,7 @@ class OpenCVController:
             # Close application on 'q' key press, new stuff on queue, or if we've reached our destination
             key = cv2.waitKey(1) & 0xFF
             if (key == ord("q")) or (not cvQueue.empty()) or inPosition:
+                self.send_serial_command(Direction.STOP, b'h');
                 # Restore webcam settings
                 self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, self.originalExposure)
                 self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, self.originalGain)
@@ -376,7 +405,7 @@ class OpenCVController:
         dist = np.linalg.norm(p1 - p2)
         return max_weight / dist
 
-    def get_coordinates(self):
+    def get_coordinates(self, cvQueue: Queue):
 
         # When turning to search for the desiredTag, we specify time to turn,
         # and time to wait after each semi-turn
@@ -506,7 +535,9 @@ class OpenCVController:
                 iterationNumber += 1
 
             # Q to quit
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            key = cv2.waitKey(1) & 0xFF
+            if (key == ord("q")) or (not cvQueue.empty()):
+                self.send_serial_command(Direction.STOP, b'h');
                 cv2.destroyAllWindows()
                 break
 
@@ -712,6 +743,7 @@ class OpenCVController:
             # Release the camera & close all windows
             key = cv2.waitKey(1) & 0xFF
             if (key == ord("q")) or (not cvQueue.empty()):
+                self.send_serial_command(Direction.STOP, b'h');
                 # We've been requested to leave ...
                 # Don't destroy everything - just destroy cv2 windows ... webcam still runs
                 cv2.destroyAllWindows()
@@ -776,7 +808,7 @@ if __name__ == "__main__":
     # classObject.april_following(22, 80,  cvQueue)
     #print(str(classObject.get_coordinates()))
     #classObject.cleanup_resources()
-    classObject.take_photo()
+    classObject.take_photo(cvQueue)
     exit()
 
     # cvQueue = Queue()
