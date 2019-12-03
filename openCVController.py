@@ -1,3 +1,5 @@
+# TODO add break condition for cv to avoid unnessesary calibration
+
 # import the necessary packages
 from queue import Queue
 import subprocess
@@ -15,6 +17,7 @@ import pygame
 from pygame.locals import *
 import json
 import apriltag
+import aprilTags
 from scipy import ndimage  # median filter
 from threading import Thread
 import sys  # command line lib
@@ -760,11 +763,13 @@ def run(cvQueue: Queue):
                 # We know the next 2 items in the queue in this case are the x and z coordinates - grab them
                 #  Note: get() commands will block until it can get something
                 print("Receive april Tag request")
-                target_tag_number = cvQueue.get()
-                target_tag_radius = cvQueue.get()
-                cvObject.april_following(target_tag_number, target_tag_radius, cvQueue)
+                final_target_tag_number = cvQueue.get()
+                final_target_tag_radius = cvQueue.get()
                 cvQueue.task_done()
                 cvQueue.task_done()
+                for target_pair in aprilTags.aprilTargets:
+                    cvObject.april_following(target_pair[0], target_pair[1], cvQueue)
+                cvObject.april_following(final_target_tag_number, final_target_tag_radius, cvQueue)
 
 
 if __name__ == "__main__":
