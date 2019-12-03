@@ -110,7 +110,7 @@ def getHeartbeat():
 def takePhoto():
     cvQueue().put('photo')
     cvQueue.join()
-    return("Your photo has been taken and emailed to you")
+    return("Your photo will be taken and emailed to you")
 
 def checkChatQueue():
     threadActive = True

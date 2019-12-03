@@ -783,6 +783,8 @@ def run(cvQueue: Queue):
                 #    pass
             elif commandFromQueue == "personFollow":
                 cvObject.person_following(False, cvQueue)
+            elif commandFromQueue == "photo":
+                cvObject.take_photo(cvQueue)
             elif commandFromQueue == "eyeballFollow":
                 cvObject.person_following(True, cvQueue)
             elif commandFromQueue == "aprilFollow":
