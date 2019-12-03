@@ -106,6 +106,12 @@ def getHeartbeat():
     heartrate = heartbeatQueue.get()
     return statement("Your heartrate is " + str(heartrate) + " beats per minute")
 
+@ask.intent('takePhoto')
+def takePhoto():
+    cvQueue().put('photo')
+    cvQueue.join()
+    return("Your photo has been taken and emailed to you")
+
 def checkChatQueue():
     threadActive = True
     while threadActive:
