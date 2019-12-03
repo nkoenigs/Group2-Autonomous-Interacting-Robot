@@ -151,6 +151,8 @@ if __name__ == '__main__':
 
     alexaTh.start()
 
+    print("test1")
+
     for thread in allThreads:
         print(str(thread))
         thread.start()
