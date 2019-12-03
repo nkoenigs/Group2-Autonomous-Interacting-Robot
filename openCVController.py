@@ -222,7 +222,7 @@ class OpenCVController:
 
         # Frame is considered to be 600x600 (after resize)
         # Below are variables to set what we consider center and in-range
-        radiusInRangeLowerBound, radiusInRangeUpperBound = desiredDistance - 20, desiredDistance + 20
+        radiusInRangeLowerBound, radiusInRangeUpperBound = desiredDistance - 10, desiredDistance + 10
         centerRightBound, centerLeftBound = 400, 200
         radiusTooCloseLowerLimit = 250
 
