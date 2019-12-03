@@ -12,7 +12,7 @@ import serial.tools.list_ports  # for listing serial ports
 import time
 import os
 from enum import Enum
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
+#os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from pygame.locals import *
 import json
