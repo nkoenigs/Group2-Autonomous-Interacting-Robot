@@ -157,7 +157,7 @@ if __name__ == '__main__':
     print("test1")
 
     for thread in allThreads:
-        print(str(thread))
+        print("ima thread")
         thread.start()
     
     print('ready for opperation')
