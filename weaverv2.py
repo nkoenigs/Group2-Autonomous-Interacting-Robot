@@ -74,8 +74,12 @@ def lookAtMe():
 
 @ask.intent('stopActing')
 def stopActing():
-    cvQueue.put("halt")
-    cvQueue.join()
+    for queue in allQueues:
+        queue.put("terminate")
+    for thread in allThreads:
+        thread.join()
+    for thread in allThreads:
+        thread.start()
     return statement('Im done following you')
 
 @ask.intent('callForHelp')
