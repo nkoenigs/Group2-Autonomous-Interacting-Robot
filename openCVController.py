@@ -800,9 +800,9 @@ def run(cvQueue: Queue):
                 cvObject.april_following(final_target_tag_number, final_target_tag_radius, cvQueue)
 
 
-if __name__ == "__main__":
-    classObject = OpenCVController()
-    cvQueue = Queue()
+#if __name__ == "__main__":
+    #classObject = OpenCVController()
+    #cvQueue = Queue()
     # classObject.runningPersonFollowing = True
     #classObject.april_following(22, 80,  cvQueue)
     #print("here?")
@@ -810,8 +810,8 @@ if __name__ == "__main__":
     # classObject.april_following(22, 80,  cvQueue)
     #print(str(classObject.get_coordinates()))
     #classObject.cleanup_resources()
-    classObject.take_photo(cvQueue)
-    exit()
+    #classObject.take_photo(cvQueue)
+    #exit()
 
     # cvQueue = Queue()
     # cvQueue.put("personFollow")
