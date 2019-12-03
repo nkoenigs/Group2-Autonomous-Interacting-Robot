@@ -19,25 +19,15 @@ import json
 import apriltag
 import aprilTags
 from scipy import ndimage  # median filter
-from threading import Thread
 import sys  # command line lib
 import glob
 import math
-import argparse
-import threading
-from collections import deque
-from math import atan2, asin
 import smtplib
 import os
-import time
 import urllib.request
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.image import MIMEImage
-
-#from email.MIMEText import MIMEText
-#from email.MIMEImage import MIMEImage
-
 
 # Class/Enums to keep track of directions sent or to send down to Arduino via Serial communication
 class Direction(Enum):
@@ -193,7 +183,10 @@ class OpenCVController:
                 break
 
     def april_following(self, desiredTag, desiredDistance, cvQueue: Queue):
-
+        
+        if (not cvQueue.empty()):
+            return
+            
         # Tune the webcam to better see april tags while robot is moving
         # (compensating for motion blur). Restore settings when done
         self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.2)
@@ -507,6 +500,7 @@ class OpenCVController:
                     #   somehow but not always?
                 cv2.destroyAllWindows()
                 print("Value to return:")  # TODO remove
+                print(coordinateToReturn) # TODO remove
                 return coordinateToReturn
             else:  # Still have iterations to go, increment the value
                 iterationNumber += 1
