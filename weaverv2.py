@@ -152,6 +152,7 @@ if __name__ == '__main__':
     alexaTh.start()
 
     for thread in allThreads:
+        print(str(thread))
         thread.start()
     
     print('ready for opperation')
