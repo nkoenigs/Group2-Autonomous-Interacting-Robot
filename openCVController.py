@@ -1,14 +1,6 @@
 # import the necessary packages
-import sys  # command line lib
-import glob
-import math
-import argparse
-import threading
-from collections import deque
 from queue import Queue
-
-from scipy import ndimage  # median filter
-from threading import Thread
+import subprocess
 from imutils.video import WebcamVideoStream
 import numpy as np
 import cv2
@@ -18,10 +10,30 @@ import serial.tools.list_ports  # for listing serial ports
 import time
 import os
 from enum import Enum
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
 import pygame
 from pygame.locals import *
 import json
 import apriltag
+from scipy import ndimage  # median filter
+from threading import Thread
+import sys  # command line lib
+import glob
+import math
+import argparse
+import threading
+from collections import deque
+from math import atan2, asin
+import smtplib
+import os
+import time
+import urllib.request
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.image import MIMEImage
+
+#from email.MIMEText import MIMEText
+#from email.MIMEImage import MIMEImage
 
 
 # Class/Enums to keep track of directions sent or to send down to Arduino via Serial communication
@@ -42,25 +54,49 @@ class OpenCVController:
 
     # Font for text on webcam display
     font = cv2.FONT_HERSHEY_SIMPLEX
+    imageNumber = 0
 
     # Define lower & upper boundaries in HSV color space (for object following/tracking)
-    greenLower = np.array([48, 100, 50])
+    greenLower = np.array([48, 100, 50])  # [48, 100, 50] 31
     greenUpper = np.array([85, 255, 255])
 
     def __init__(self):
-        self.serialPort = self.com_connect() if True else None  # TODO True for running - False for testing
+
+        self.serialPort = self.com_connect() if False else None  # True for running - False for testing
+
         # Variables to hold last command sent to Arduino and when it was sent (epoch seconds)
         self.lastCommandSentViaSerial = None
         self.lastCommandSentViaSerialTime = None
-        # Connect to webcam video source and allow camera to warm up......
-        self.vs = WebcamVideoStream(src=1).start()
-        time.sleep(2.0)
-        # TODO need some way to kill my loops nicely - how about these 2 lines below?
-        # self.runningPersonFollowing = False
-        # self.runningAprilFollowing = False
 
-    # TODO remove the timeout in serial setting ... confirm it doesn't do anythin, then add write_timeout=0 (
-    #  nonblocking)
+        # Connect to webcam video source
+        self.WebcamVideoStreamObject = WebcamVideoStream(src=1)
+
+        # Save the original exposure and gain of the webcam for restoring later...
+        self.originalExposure = self.WebcamVideoStreamObject.stream.get(cv2.CAP_PROP_EXPOSURE)
+        self.originalGain = self.WebcamVideoStreamObject.stream.get(cv2.CAP_PROP_GAIN)
+        # Note: original exposure is probably like 0.015401540324091911 and adjusts automatically
+
+        # <Insert any webcam modifications here>
+
+        # Start the webcam streaming operation and set the object attribute to use...
+        self.vs = self.WebcamVideoStreamObject.start()
+        # Allow camera to warm up...
+        time.sleep(2.0)
+
+        # subprocess.check_call("v4l2-ctl -d /dev/video1 -c exposure_absolute=40",shell=True)
+        # print("New Gain") print(str(self.WebcamVideoStreamObject.stream.get(cv2.CAP_PROP_GAIN)))
+        # print("New exposure") print(str(self.WebcamVideoStreamObject.stream.get(cv2.CAP_PROP_EXPOSURE)))
+        # print("Frame width") print(str(self.WebcamVideoStreamObject.stream.get(cv2.CAP_PROP_FRAME_WIDTH)))
+        # print("Frame height") print(str(self.WebcamVideoStreamObject.stream.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+    
+    @staticmethod
+    def internet_on():
+      try:
+        urllib.urlopen('http://216.58.192.142', timeout = 1)
+        return True
+      except urllib2.URLError as err:
+        return False
+
     @staticmethod
     def com_connect():
         ser = None
@@ -72,7 +108,7 @@ class OpenCVController:
                 print("Connected to Serial")
             if os.path.exists('/dev/ttyACM1'):
                 connection_made = True
-                ser = serial.Serial('/dev/ttyACM1', 115200, timeout=1)
+                ser = serial.Serial('/dev/ttyACM1', 115200, write_timeout=0)
         return ser
 
     # TODO there's a section of this code that needs to be uncommented
@@ -84,24 +120,93 @@ class OpenCVController:
                 self.serialPort.write(dataToSend)
                 self.lastCommandSentViaSerial = direction_enum
                 self.lastCommandSentViaSerialTime = time.time()
-            # elif (time.time() - self.lastCommandSentViaSerialTime > 1):
+            # elif (time.time() - self.lastCommandSentViaSerialTime > 1): # TODO also need null check here
             #    self.serialPort.write(dataToSend)
             #    self.lastCommandSentViaSerialTime = time.time()
             else:
                 pass  # Do nothing - same command sent recently
 
     def cleanup_resources(self):
-        self.vs.stream.release()
-        cv2.destroyAllWindows()
+        # TODO change the order of stream release and stop() - see what happens
         self.vs.stop()
+        #self.vs.stream.release() # TODO looks like this is already handled by stop() ??
+        cv2.destroyAllWindows() # Not necessary since I do it at the end of every method
+        if self.serialPort is not None:  # Close serialPort if it exists
+            self.serialPort.close()  # TODO make sure this doesn't ruin anything
+
+    def take_photo(self):
+        
+        # Creating a window for later use
+        cv2.namedWindow('result')
+        cv2.resizeWindow('result', 600, 600)
+        startTime = time.time()
+        waitTimeSec = 5
+        strSec = "54321"
+
+        while True:
+            # Grab frame - break if we don't get it (some unknown error occurred)
+            frame = self.vs.read()
+            if frame is None:
+                print("ERROR - frame read a NONE")
+                break
+
+            frame = imutils.resize(frame, width=600)
+            
+            currTime = time.time()
+            timeDiff = int(currTime - startTime) # seconds
+            
+            if timeDiff < waitTimeSec: # TODO <= ?
+                # Put time countdown on the frame (TODO resize)
+                cv2.putText(frame, strSec[timeDiff], (10, 30), self.font, 0.5, (200, 255, 155), 1, cv2.LINE_AA)
+                cv2.imshow("result", frame)
+            else: # Time's up - take the photo and do post-processing
+                cv2.imshow("result", frame)
+                time.sleep(1) # So it's obvious photo was taken
+                cv2.imwrite(filename='saved_img_' + str(self.imageNumber) + '.jpg', img=frame)
+                self.imageNumber += 1 # Increment for next possible photo
+                cv2.destroyAllWindows() # Close the CV windows
+                # Send email
+                msg = MIMEMultipart()
+                msg.attach(MIMEImage(file('saved_img_' + str(self.imageNumber) + '.jpg').read()))
+                conn = smtplib.SMTP('imap.gmail.com', 587)
+                conn.ehlo()
+                conn.starttls()
+                conn.login('UmdJetson2@gmail.com', 'jetson1994')
+                #conn.sendmail('UmdJetson2@gmail.com', 'huy1994@gmail.com', IPAddr)
+                #time.sleep(1)
+                #conn.sendmail('UmdJetson2@gmail.com', 'ndkoenigsmark@gmail.com', IPAddr)
+                #time.sleep(1)
+                conn.sendmail('UmdJetson2@gmail.com', 'nikhilu@terpmail.umd.edu', msg.as_string())
+                conn.quit()
+                break
+                #  and send via email here (actually send it once out of the loop
+
+            # Close application on 'q' key press or if new stuff added to queue
+            key = cv2.waitKey(1) & 0xFF
+            if (key == ord("q")) or (not cvQueue.empty()):
+                # We've been requested to leave ...
+                # Don't destroy everything - just destroy cv2 windows ... webcam still runs
+                cv2.destroyAllWindows()
+                break
 
     def april_following(self, desiredTag, desiredDistance, cvQueue: Queue):
 
+        # Tune the webcam to better see april tags while robot is moving
+        # (compensating for motion blur). Restore settings when done
+        self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.2)
+        self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, 1)
+
         # Frame is considered to be 600x600 (after resize)
         # Below are variables to set what we consider center and in-range
-        radiusInRangeLowerBound, radiusInRangeUpperBound = desiredDistance-20, desiredDistance+20
+        radiusInRangeLowerBound, radiusInRangeUpperBound = desiredDistance - 20, desiredDistance + 20
         centerRightBound, centerLeftBound = 400, 200
         radiusTooCloseLowerLimit = 250
+
+        # When turning to search for the desiredTag, we specify time to turn,
+        # and time to wait after each semi-turn
+        searchingTimeToTurn = 0.5  # seconds
+        searchingTimeToHalt = 0.5  # seconds
+        # TODO change the above for max turning and minimal halting that still works
 
         # Creating a window for later use
         cv2.namedWindow('result')
@@ -110,20 +215,35 @@ class OpenCVController:
         # Variables to 'smarten' the following procedure
         objectSeenOnce = False  # Object has never been seen before
         leftOrRightLastSent = None  # Keep track of whether we sent left or right last
+        firstTimeObjectNotSeen = None;
 
         # Initialize apriltag detector
-        det = apriltag.Detector()
-        firstTimeObjectNotSeen = None;
+        options = apriltag.DetectorOptions(
+            families='tag36h11',
+            border=1,
+            nthreads=1,
+            quad_decimate=1.0,
+            quad_blur=0.0,
+            refine_edges=True,
+            refine_decode=True,
+            refine_pose=False,
+            debug=False,
+            quad_contours=True)
+        det = apriltag.Detector(options)
+
         # TODO delete this block when done
         start = time.time();
         num_frames = 0;
         inPosition = False
+        numHalts = 0
 
         while True:
+
             # Grab frame - break if we don't get it (some unknown error occurred)
             frame = self.vs.read()
             if frame is None:
                 break
+
             # TODO delete this block when done
             end = time.time();
             seconds = end - start;
@@ -131,26 +251,30 @@ class OpenCVController:
             fps = 0 if (seconds == 0) else num_frames / seconds;
 
             frame = imutils.resize(frame, width=600)
-            # Use grayscale image for detection
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # frame = cv2.filter2D(frame, -1, np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])) # Sharpen image
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)  # Use grayscale image for detection
             res = det.detect(gray)
 
             commandString = None
 
+            # Check if the desiredTag is visible
             tagObject = None
             for r in res:
                 if r.tag_id == desiredTag:
                     tagObject = r
 
             if tagObject is None:  # We don't see the tag
+
                 # Don't see the tag? Possibly just bad frame, lets wait 2 seconds and then start turning
+                # TODO change this -  we probably don't need to do these half-ass turns anymore
+                numHalts += 1  # TODO delete
                 if firstTimeObjectNotSeen is None:
                     firstTimeObjectNotSeen = time.time()
                     self.send_serial_command(Direction.STOP, b'h')
                     commandString = "STOP";
                 else:
                     secondsOfNoTag = time.time() - firstTimeObjectNotSeen
-                    if secondsOfNoTag > 2: # Haven't seen our tag for more than 2 seconds
+                    if secondsOfNoTag > 2:  # Haven't seen our tag for more than 2 seconds
                         if leftOrRightLastSent is not None:
                             if leftOrRightLastSent == Direction.RIGHT:
                                 self.send_serial_command(Direction.RIGHT, b'r');
@@ -163,10 +287,10 @@ class OpenCVController:
                             commandString = "DEFAULT SEARCHING: GO LEFT"
 
                         # We've sent the command now wait half a second and then send a halt
-                        time.sleep(0.5)
+                        time.sleep(searchingTimeToTurn)
                         self.send_serial_command(Direction.STOP, b'h');
-                        time.sleep(0.5)
-                    else: # Keep waiting - 2 seconds haven't elapsed
+                        time.sleep(searchingTimeToHalt)
+                    else:  # Keep waiting - 2 seconds haven't elapsed
                         self.send_serial_command(Direction.STOP, b'h');
                         commandString = "STOP";
 
@@ -198,6 +322,7 @@ class OpenCVController:
                 cv2.circle(frame, (int(x), int(y)), int(filteredPtsRadius[0]), (0, 255, 255), 2)
                 cv2.circle(frame, center, 5, (0, 0, 255), -1)
 
+                # Determine command to send to arudino/motors
                 if filteredPtsRadius[0] > radiusTooCloseLowerLimit:
                     commandString = "MOVE BACKWARD - TOO CLOSE TO TURN"
                     self.send_serial_command(Direction.BACKWARD, b'b')
@@ -228,26 +353,165 @@ class OpenCVController:
                 cv2.putText(frame, 'filtered radius: (' + str(filteredPtsRadius[0]) + ')', (10, 90), self.font, 0.5,
                             (200, 255, 155), 1, cv2.LINE_AA)
 
-            # Show FPS (TODO delete this later)
+            # Show FPS and number of halts (TODO delete this later)
             cv2.putText(frame, commandString, (10, 30), self.font, 0.5, (200, 255, 155), 1, cv2.LINE_AA)
             cv2.putText(frame, 'FPS: (' + str(fps) + ')', (10, 120), self.font, 0.5,
+                        (200, 255, 155), 1, cv2.LINE_AA)
+            cv2.putText(frame, 'numHalts: (' + str(numHalts) + ')', (10, 150), self.font, 0.5,
                         (200, 255, 155), 1, cv2.LINE_AA)
 
             # Display frame
             cv2.imshow("result", frame)
 
-            # Close application on 'q' key press
-            # Infinite loop has been broken out of ... teardown now
-            # Release the camera & close all windows
+            # Close application on 'q' key press, new stuff on queue, or if we've reached our destination
             key = cv2.waitKey(1) & 0xFF
             if (key == ord("q")) or (not cvQueue.empty()) or inPosition:
-                # We've been requested to leave ...
+                # Restore webcam settings
+                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, self.originalExposure)
+                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, self.originalGain)
+                subprocess.check_call("v4l2-ctl -d /dev/video1 -c exposure_auto=3", shell=True)
                 # Dont destroy everything - just destroy cv2 windows ... webcam still runs
                 cv2.destroyAllWindows()
                 break
 
+    @staticmethod
+    def calc_weight(p1, p2):
+        max_weight = 150
+        dist = np.linalg.norm(p1 - p2)
+        return max_weight / dist
+
     def get_coordinates(self):
-        return (1, 2)
+
+        # When turning to search for the desiredTag, we specify time to turn,
+        # and time to wait after each semi-turn
+        searchingTimeToTurn = 2.5  # seconds
+        searchingTimeToHalt = 2.5  # seconds
+        # TODO change the above for max turning and minimal halting that still works
+
+        options = apriltag.DetectorOptions(
+            families='tag36h11',
+            border=1,
+            nthreads=1,
+            quad_decimate=1.0,
+            quad_blur=0.0,
+            refine_edges=True,
+            refine_decode=True,
+            refine_pose=True,
+            debug=False,
+            quad_contours=True)
+        det = apriltag.Detector(options)
+
+        # Load camera data
+        with open('cameraParams.json', 'r') as f:
+            data = json.load(f)
+        cameraMatrix = np.array(data['cameraMatrix'], dtype=np.float32)
+        distCoeffs = np.array(data['distCoeffs'], dtype=np.float32)
+
+        # Load world points
+        world_points = {}
+        with open('worldPoints.json', 'r') as f:
+            data = json.load(f)
+        for k, v in data.items():
+            world_points[int(k)] = np.array(v, dtype=np.float32).reshape((4, 3, 1))
+
+        # Variables for final decision
+        coordinates_list = []
+        iterationNumber = 1
+        numIterations = 5
+
+        while True:
+            # Rotate camera by going left by some amount (TODO fine tune)
+            # TODO can cut down on halt time? lengthen turn time? need to play around..
+            self.send_serial_command(Direction.LEFT, b'l');
+            time.sleep(searchingTimeToTurn)
+            self.send_serial_command(Direction.STOP, b'h');
+            time.sleep(searchingTimeToHalt)
+
+            # Now lets read the frame (while the robot is halted so that image is clean)
+            frame = self.vs.read()
+            if frame is None:
+                print("ERROR - frame read a NONE")
+                break
+
+            # Use grayscale image for detection
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            res = det.detect(gray)
+
+            # Check how many tags we see... if 0 then ignore this
+            numTagsSeen = len(res)
+            print("\nNumber of tags seen", numTagsSeen) # TODO remove
+
+            if numTagsSeen > 0:
+
+                poses = []  # Store poses from each tag to average them over
+                tagRadiusList = []  # Store tag radius' to determine the largest
+
+                for r in res:  # Iterate over each tag in the frame
+                    corners = r.corners
+                    tag_id = r.tag_id
+                    corners = np.array(corners, dtype=np.float32).reshape((4, 2, 1))
+                    cornersList = []
+                    for c in corners:
+                        cornersList.append([int(x) for x in c])
+                    cornersList = np.array(cornersList, dtype=np.int32)
+
+                    # Draw circle around tag using its corners & get radius of that tag
+                    ((x, y), radius) = cv2.minEnclosingCircle(cornersList) # TODO make _ (dont care)
+                    filteredPtsRadius = [radius]
+
+                    # Solve pose ((x,z) coordinates)
+                    r, rot, t = cv2.solvePnP(world_points[tag_id], corners, cameraMatrix,
+                                             distCoeffs)  # get rotation and translation vector using solvePnP
+                    rot_mat, _ = cv2.Rodrigues(rot)  # convert to rotation matrix
+                    R = rot_mat.transpose()  # Use rotation matrix to get pose = -R * t (matrix mul w/ @)
+                    pose = -R @ t
+                    weight = self.calc_weight(pose, world_points[tag_id][0])
+                    poses.append((pose, weight))
+                    tagRadiusList.append(filteredPtsRadius)
+
+                # Done iterating over the tags that're seen in the frame...
+                # Now get the average pose across the tags and get the largest radius
+                # We will store the (x,z) coordinate that we calculate, and we'll also
+                # store the largest radius for a tag that we've seen in this frame.
+                avgPose = sum([x * y for x, y in poses]) / sum([x[1] for x in poses])
+                largestTagRadius = max(tagRadiusList)
+                coordinates = (avgPose[0][0], avgPose[2][0], largestTagRadius)
+                print(str(coordinates))  # TODO remove this
+                coordinates_list.append(coordinates)
+
+            # Display frame
+            cv2.imshow('frame', frame)
+
+            # If we've completed our numIterations, then choose the coordinate
+            # and return (do closing operations too)
+            if iterationNumber == numIterations:
+                if len(coordinates_list) > 0:
+                    # TODO 2 things we can try here ...
+                    #   1) The coordinate to return is the one with the smallest z-coordinate
+                    #      (which essentially means it's closest to those tags that it used)
+                    #      BUT this value seems to vary a lot and I don't think it's reliable
+                    #   2) I have saved the largest radius for a tag seen for each of these
+                    #      coordinates, so I can use that (which I bet is more reliable)
+                    # I will go with approach number 2
+
+                    # coordinateToReturn = min(coordinates_list, key=lambda x: x[1]) # Approach (1)
+                    coordinateToReturn = max(coordinates_list, key=lambda x: x[2])  # Approach (2)
+                    coordinateToReturn = (int(coordinateToReturn[0]), int(coordinateToReturn[1]))  # This stays regardless
+                else:
+                    coordinateToReturn = (1, 2)  # TODO set to some default outside the door
+                    # TODO if this happens then we'll have to get moving too
+                    #   ask team -  do we already move in response to our own distress? Can we make it do so
+                    #   somehow but not always?
+                cv2.destroyAllWindows()
+                print("Value to return:")  # TODO remove
+                return coordinateToReturn
+            else:  # Still have iterations to go, increment the value
+                iterationNumber += 1
+
+            # Q to quit
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                cv2.destroyAllWindows()
+                break
 
     def person_following(self, run_py_eyes, cvQueue: Queue):
 
@@ -266,8 +530,8 @@ class OpenCVController:
         leftOrRightLastSent = None  # Keep track of whether we sent left or right last
 
         # TODO delete this block when done
-        start = time.time();
-        num_frames = 0;
+        start = time.time()
+        num_frames = 0
 
         # PyEyes Setup
         if run_py_eyes:
@@ -287,13 +551,13 @@ class OpenCVController:
             # Grab frame - break if we don't get it (some unknown error occurred)
             frame = self.vs.read()
             if frame is None:
+                print("ERROR - frame read a NONE")
                 break
-
             # TODO delete this block when done
-            end = time.time();
-            seconds = end - start;
-            num_frames += 1;
-            fps = 0 if (seconds == 0) else num_frames / seconds;
+            end = time.time()
+            seconds = end - start
+            num_frames += 1
+            fps = 0 if (seconds == 0) else num_frames / seconds
 
             # Resize the frame, blur it, and convert it to the HSV color space
             frame = imutils.resize(frame, width=600)
@@ -315,8 +579,8 @@ class OpenCVController:
             # Only proceed if at least one contour was found
             # If nothing is found => look around OR send the STOP command to halt movement (depends on situation)
             if len(cnts) == 0:
-                # If we haven't seen the object before, then we'll stay halted until we see one
-                # If we HAVE seen the object before, then we'll move in the direction (left or right) that we did most recently
+                # If we haven't seen the object before, then we'll stay halted until we see one. If we HAVE seen the
+                # object before, then we'll move in the direction (left or right) that we did most recently
                 if not objectSeenOnce:
                     self.send_serial_command(Direction.STOP, b'h');
                     commandString = "STOP";
@@ -346,7 +610,8 @@ class OpenCVController:
                 if filteredPtsRadius[0] <= 25:
                     # TODO this is the same code as the block above - I should extract these out to a function
                     # If we haven't seen the object before, then we'll stay halted until we see one
-                    # If we HAVE seen the object before, then we'll move in the direction (left or right) that we did most recently
+                    # If we HAVE seen the object before, then we'll move in the direction (left or right) that we did
+                    # most recently
                     if not objectSeenOnce:
                         self.send_serial_command(Direction.STOP, b'h');
                         commandString = "STOP";
@@ -451,26 +716,12 @@ class OpenCVController:
             key = cv2.waitKey(1) & 0xFF
             if (key == ord("q")) or (not cvQueue.empty()):
                 # We've been requested to leave ...
-                # Dont destroy everything - just destroy cv2 windows ... webcam still runs
+                # Don't destroy everything - just destroy cv2 windows ... webcam still runs
                 cv2.destroyAllWindows()
                 if run_py_eyes:
                     pygame.display.quit()
                     pygame.quit()
                 break
-
-
-def thread_closer(person_following_thread: Thread, april_following_thread: Thread, cvObject: OpenCVController):
-    # If either of the following threads are running then we need to close them and then run our operation since it
-    # uses the shared webcam resources
-    # Only one of these below should be able to run on any call to thread_closer
-    if cvObject.runningPersonFollowing:
-        cvObject.runningPersonFollowing = False
-        person_following_thread.join()
-    if cvObject.runningAprilFollowing:
-        cvObject.runningAprilFollowing = False;
-        april_following_thread.join()
-
-    return (None, None)
 
 
 def run(cvQueue: Queue):
@@ -517,10 +768,18 @@ def run(cvQueue: Queue):
 
 
 if __name__ == "__main__":
-    # classObject = OpenCVController()
-    # classObject.runningPersonFollowing = True
-    # classObject.person_following(True)
-
+    classObject = OpenCVController()
     cvQueue = Queue()
-    cvQueue.put("personFollow")
-    run(cvQueue)
+    # classObject.runningPersonFollowing = True
+    #classObject.april_following(22, 80,  cvQueue)
+    #print("here?")
+    #classObject.person_following(True,  cvQueue)
+    # classObject.april_following(22, 80,  cvQueue)
+    #print(str(classObject.get_coordinates()))
+    #classObject.cleanup_resources()
+    classObject.take_photo()
+    exit()
+
+    # cvQueue = Queue()
+    # cvQueue.put("personFollow")
+    # run(cvQueue)
