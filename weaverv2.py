@@ -153,6 +153,8 @@ if __name__ == '__main__':
 
     for thread in allThreads:
         thread.start()
+    
+    print('ready for opperation')
 
     for thread in allThreads:
         thread.join()
