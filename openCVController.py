@@ -211,15 +211,16 @@ class OpenCVController:
                 cv2.destroyAllWindows()
                 break
 
-    def april_following(self, desiredTag, desiredDistance, cvQueue: Queue):
+    def april_following(self, desiredTag, desiredDistance, cvQueue: Queue, isFirstUse, isLastUse):
         
         if (not cvQueue.empty()):
             return
             
         # Tune the webcam to better see april tags while robot is moving
         # (compensating for motion blur). Restore settings when done
-        self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.2)
-        self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, 1)
+        if (isFirstUse):
+                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.4)
+                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, 1)
 
         # Frame is considered to be 600x600 (after resize)
         # Below are variables to set what we consider center and in-range
@@ -393,9 +394,10 @@ class OpenCVController:
             if (key == ord("q")) or (not cvQueue.empty()) or inPosition:
                 self.send_serial_command(Direction.STOP, b'h');
                 # Restore webcam settings
-                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, self.originalExposure)
-                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, self.originalGain)
-                subprocess.check_call("v4l2-ctl -d /dev/video1 -c exposure_auto=3", shell=True)
+                if (not inPosition or (inPosition and isLast)):
+                        self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, self.originalExposure)
+                        self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, self.originalGain)
+                        subprocess.check_call("v4l2-ctl -d /dev/video1 -c exposure_auto=3", shell=True)
                 # Dont destroy everything - just destroy cv2 windows ... webcam still runs
                 cv2.destroyAllWindows()
                 break
@@ -411,7 +413,7 @@ class OpenCVController:
         # When turning to search for the desiredTag, we specify time to turn,
         # and time to wait after each semi-turn
         searchingTimeToTurn = 0.5  # seconds
-        searchingTimeToHalt = 1.0  # seconds
+        searchingTimeToHalt = 2.0  # seconds
         # TODO change the above for max turning and minimal halting that still works
 
         options = apriltag.DetectorOptions(
