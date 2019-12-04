@@ -126,6 +126,7 @@ def checkChatQueue():
                 chatQueue.task_done()
                 chatQueue.task_done()
                 final_target  = aprilTags.getClosestTag(x_cord, z_cord)
+                print("target dest: ", final_target[0], " ",final_target[1])
                 cvQueue.put("aprilFollow")
                 cvQueue.put(final_target[0])
                 cvQueue.put(final_target[1])
