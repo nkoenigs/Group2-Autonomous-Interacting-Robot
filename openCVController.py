@@ -1,5 +1,3 @@
-# TODO add break condition for cv to avoid unnessesary calibration
-
 # import the necessary packages
 from queue import Queue
 import subprocess
@@ -59,7 +57,7 @@ class OpenCVController:
     def __init__(self):
 
         #self.serialPort = self.com_connect() if aprilTags.activateMotors else None  # True for running - False for testing
-        self.serialPort = self.com_connect() if True  else None  # True for running - False for testing
+        self.serialPort = self.com_connect() if False  else None  # True for running - False for testing
 
         # Variables to hold last command sent to Arduino and when it was sent (epoch seconds)
         self.lastCommandSentViaSerial = None
@@ -231,7 +229,7 @@ class OpenCVController:
         # When turning to search for the desiredTag, we specify time to turn,
         # and time to wait after each semi-turn
         searchingTimeToTurn = 0.5  # seconds
-        searchingTimeToHalt = 0.5  # seconds
+        searchingTimeToHalt = 1.0  # seconds
         # TODO change the above for max turning and minimal halting that still works
 
         # Creating a window for later use
@@ -526,7 +524,7 @@ class OpenCVController:
                     coordinateToReturn = max(coordinates_list, key=lambda x: x[2])  # Approach (2)
                     coordinateToReturn = (int(coordinateToReturn[0]), int(coordinateToReturn[1]))  # This stays regardless
                 else:
-                    coordinateToReturn = (1, 2)  # TODO set to some default outside the door
+                    coordinateToReturn = (0, -1)  # TODO set to some default outside the door
                     # TODO if this happens then we'll have to get moving too
                     #   ask team -  do we already move in response to our own distress? Can we make it do so
                     #   somehow but not always?
@@ -806,13 +804,13 @@ def run(cvQueue: Queue):
             elif commandFromQueue == "halt":
                 pass
 
-#if __name__ == "__main__":
-   # classObject = OpenCVController()
-    #cvQueue = Queue()
+if __name__ == "__main__":
+    classObject = OpenCVController()
+    cvQueue = Queue()
     # classObject.runningPersonFollowing = True
     #classObject.april_following(22, 80,  cvQueue)
     #print("here?")
-    #classObject.april_following(39, 80,  cvQueue)
+    classObject.april_following(12, 80,  cvQueue, True, True)
     #classObject.person_following(True,  cvQueue)
    # print(str(classObject.get_coordinates(cvQueue)))
     #classObject.cleanup_resources()
