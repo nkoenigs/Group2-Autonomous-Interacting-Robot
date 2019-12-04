@@ -775,7 +775,7 @@ def run(cvQueue: Queue):
                 print("Sent halt command")
             elif commandFromQueue == "getCoordinates":
                 print("got command getCoordinates")
-                x, z = cvObject.get_coordinates()
+                x, z = cvObject.get_coordinates(cvQueue)
                 print("sending coordinates")
                 cvQueue.put(x)
                 cvQueue.put(z)
