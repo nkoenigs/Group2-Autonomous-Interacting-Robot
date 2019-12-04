@@ -311,9 +311,9 @@ class OpenCVController:
                             commandString = "DEFAULT SEARCHING: GO RIGHT"
 
                         # We've sent the command now wait half a second and then send a halt
-                        time.sleep(searchingTimeToTurn)
-                        self.send_serial_command(Direction.STOP, b'h');
-                        time.sleep(searchingTimeToHalt)
+                        #time.sleep(searchingTimeToTurn)
+                        #self.send_serial_command(Direction.STOP, b'h');
+                        #time.sleep(searchingTimeToHalt)
                     else:  # Keep waiting - 2 seconds haven't elapsed
                         self.send_serial_command(Direction.STOP, b'h');
                         commandString = "STOP";
@@ -824,7 +824,7 @@ if __name__ == "__main__":
     # classObject.runningPersonFollowing = True
     #classObject.april_following(22, 80,  cvQueue)
     #print("here?")
-    classObject.april_following(12, 80,  cvQueue, True, True)
+    classObject.april_following(41, 80,  cvQueue, True, True)
     #classObject.person_following(True,  cvQueue)
    # print(str(classObject.get_coordinates(cvQueue)))
     #classObject.cleanup_resources()
