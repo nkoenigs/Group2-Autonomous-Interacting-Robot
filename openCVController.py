@@ -780,6 +780,7 @@ def run(cvQueue: Queue):
                 cvQueue.put(x)
                 cvQueue.put(z)
                 cvQueue.join()
+                print("nonblocking")
                 # while not cvQueue.empty():  # Wait here until the queue gets emptied
                 #    pass
             elif commandFromQueue == "personFollow":
