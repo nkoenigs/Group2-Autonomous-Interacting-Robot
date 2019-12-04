@@ -92,7 +92,8 @@ def callForHelp():
     chatQueue.put(x_cord)
     chatQueue.put(z_cord)
     chatQueue.join()
-    return statement('Distress signal sent at ' + str(x_cord) + ", " + str(z_cord))
+    print('past join')
+    return statement('Distress signal sent at ' + str(x_cord) + ', ' + str(z_cord))
 
 @ask.intent('getHeartbeat')
 def getHeartbeat():
