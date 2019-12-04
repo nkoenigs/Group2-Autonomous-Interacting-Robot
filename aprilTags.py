@@ -4,7 +4,7 @@ import math
 activateMotors = True
 
 #this is a list of [tag nums, distances] to travel to
-aprilTargets = ([2, 70], [46, 80], [37, 80], [24, 80])
+aprilTargets = ([2, 70], [46, 80], [41, 80], [36, 80], [24, 80])
 
 #finds the closes tag to a point
 def getClosestTag(x, z):
