@@ -807,11 +807,12 @@ def run(cvQueue: Queue):
                 i = 0
                 end_index = aprilTags.endOptions[final_target_tag_number]
                 for target_pair in aprilTags.aprilTargets:
+                    print("going to:" + str(target_pair[0]))
                     cvObject.april_following(target_pair[0], target_pair[1], cvQueue, False, False)
                     if i == end_index:
                         break
                     i += 1
-                
+                print("going to " +str(final_target_tag_number))
                 cvObject.april_following(final_target_tag_number, final_target_tag_radius, cvQueue, False, True)
             
             elif commandFromQueue == "halt":
