@@ -219,7 +219,7 @@ class OpenCVController:
         # Tune the webcam to better see april tags while robot is moving
         # (compensating for motion blur). Restore settings when done
         if (isFirstUse):
-                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.4)
+                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.2)
                 self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, 1)
 
         # Frame is considered to be 600x600 (after resize)
@@ -231,7 +231,7 @@ class OpenCVController:
         # When turning to search for the desiredTag, we specify time to turn,
         # and time to wait after each semi-turn
         searchingTimeToTurn = 0.5  # seconds
-        searchingTimeToHalt = 0.5  # seconds
+        searchingTimeToHalt = 1.0  # seconds
         # TODO change the above for max turning and minimal halting that still works
 
         # Creating a window for later use
