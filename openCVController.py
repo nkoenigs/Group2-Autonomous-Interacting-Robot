@@ -59,7 +59,7 @@ class OpenCVController:
     def __init__(self):
 
         #self.serialPort = self.com_connect() if aprilTags.activateMotors else None  # True for running - False for testing
-        self.serialPort = self.com_connect() if True  else None  # True for running - False for testing
+        self.serialPort = self.com_connect() if False  else None  # True for running - False for testing
 
         # Variables to hold last command sent to Arduino and when it was sent (epoch seconds)
         self.lastCommandSentViaSerial = None
@@ -219,7 +219,7 @@ class OpenCVController:
         # Tune the webcam to better see april tags while robot is moving
         # (compensating for motion blur). Restore settings when done
         if (isFirstUse):
-                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.2)
+                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.4)
                 self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, 1)
 
         # Frame is considered to be 600x600 (after resize)
@@ -806,13 +806,13 @@ def run(cvQueue: Queue):
             elif commandFromQueue == "halt":
                 pass
 
-#if __name__ == "__main__":
-   # classObject = OpenCVController()
-    #cvQueue = Queue()
+if __name__ == "__main__":
+    classObject = OpenCVController()
+    cvQueue = Queue()
     # classObject.runningPersonFollowing = True
     #classObject.april_following(22, 80,  cvQueue)
     #print("here?")
-    #classObject.april_following(39, 80,  cvQueue)
+    classObject.april_following(12, 80,  cvQueue, True, True)
     #classObject.person_following(True,  cvQueue)
    # print(str(classObject.get_coordinates(cvQueue)))
     #classObject.cleanup_resources()
