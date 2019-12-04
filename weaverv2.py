@@ -74,9 +74,8 @@ def lookAtMe():
 
 @ask.intent('stopActing')
 def stopActing():
-    cvQueue.put("terminate")
+    cvQueue.put("halt")
     cvTh.join()
-    cvTh.start()
     return statement('I\'m done following you')
 
 @ask.intent('callForHelp')

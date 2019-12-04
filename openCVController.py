@@ -799,7 +799,8 @@ def run(cvQueue: Queue):
                 for target_pair in aprilTags.aprilTargets:
                     cvObject.april_following(target_pair[0], target_pair[1], cvQueue)
                 cvObject.april_following(final_target_tag_number, final_target_tag_radius, cvQueue)
-
+            elif commandFromQueue == "halt":
+                pass
 
 #if __name__ == "__main__":
    # classObject = OpenCVController()
