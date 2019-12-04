@@ -1,5 +1,8 @@
 import math
 
+#wheels on?
+activateMotors = True
+
 #this is a list of [tag nums, distances] to travel to
 aprilTargets = ([2, 70], [46, 80], [37, 80], [24, 80])
 

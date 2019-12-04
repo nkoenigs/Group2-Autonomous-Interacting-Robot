@@ -80,7 +80,7 @@ def stopActing():
         thread.join()
     for thread in allThreads:
         thread.start()
-    return statement('Im done following you')
+    return statement('I'm done following you')
 
 @ask.intent('callForHelp')
 def callForHelp():
@@ -110,7 +110,7 @@ def getHeartbeat():
 def takePhoto():
     cvQueue.put('photo')
     cvQueue.join()
-    return("Your photo will be taken and emailed to you")
+    return statement("Your photo will be taken and emailed to you")
 
 def checkChatQueue():
     threadActive = True
