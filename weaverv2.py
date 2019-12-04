@@ -108,7 +108,7 @@ def getHeartbeat():
 
 @ask.intent('takePhoto')
 def takePhoto():
-    cvQueue().put('photo')
+    cvQueue.put('photo')
     cvQueue.join()
     return("Your photo will be taken and emailed to you")
 
@@ -136,7 +136,6 @@ def checkChatQueue():
                 cvQueue.join()
 
 if __name__ == '__main__':
-    print("main")
     alexaTh = th.Thread(target= app.run)
     alexaTh.daemon = True
     cvTh = mp.Process(target= openCVController.run, args= (cvQueue, ))
@@ -144,23 +143,16 @@ if __name__ == '__main__':
     chatTh = th.Thread(target= chatController.run, args= (chatQueue, ))
     chatQueueCheckTh = th.Thread(target= checkChatQueue)
 
-    print("allth")
     allThreads = []
     allThreads.append(cvTh)
     allThreads.append(heartbeatTh)
     allThreads.append(chatTh)
     allThreads.append(chatQueueCheckTh)
 
-    print("b4")
     alexaTh.start()
 
-    print("test1")
-
     for thread in allThreads:
-        print("ima thread")
         thread.start()
-    
-    print('ready for opperation')
 
     for thread in allThreads:
         thread.join()
