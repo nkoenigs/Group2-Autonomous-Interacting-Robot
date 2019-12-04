@@ -158,8 +158,7 @@ if __name__ == '__main__':
 
     for thread in allThreads:
         thread.start()
-    print("test")
-    
+
     while True:
         for thread in allThreads:
             thread.join()
