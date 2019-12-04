@@ -80,7 +80,7 @@ def stopActing():
         thread.join()
     for thread in allThreads:
         thread.start()
-    return statement('I'm done following you')
+    return statement('I\'m done following you')
 
 @ask.intent('callForHelp')
 def callForHelp():
