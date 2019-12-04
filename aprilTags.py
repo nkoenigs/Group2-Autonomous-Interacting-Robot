@@ -6,7 +6,7 @@ activateMotors = True
 #this is a list of [tag nums, distances] to travel to
 aprilTargets = ([2, 70], [46, 80], [41, 80], [36, 80], [24, 80])
 
-#finds the closes tag to a point 
+#finds the closes tag to a point
 def getClosestTag(x, z):
     best_distance = 100000
     for i in range(0, 49): #TODO change this range to exclude undesirable endgame tags (aka in the room)

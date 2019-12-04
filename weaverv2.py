@@ -76,14 +76,15 @@ def lookAtMe():
 
 @ask.intent('stopActing')
 def stopActing():
-    global.globalDummyLock = True
+    global globalDummyLock
+    globalDummyLock = True
     for queue in allQueues:
         queue.put("terminate")
     for thread in allThreads:
         thread.join()
     for thread in allThreads:
         thread.start()
-    global.globalDummyLock = False
+    globalDummyLock = False
     return statement('I\'m done following you')
 
 @ask.intent('callForHelp')
