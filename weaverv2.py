@@ -97,6 +97,7 @@ def distressHandling():
     chatQueue.put(x_cord)
     chatQueue.put(z_cord)
     chatQueue.join()
+    print("finished bonus thread")
 
 @ask.intent('getHeartbeat')
 def getHeartbeat():
