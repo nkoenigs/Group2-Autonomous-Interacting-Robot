@@ -1,6 +1,12 @@
 # zGroup2
 group 2 master
 
+to run first call ./ngrok http 5000
+then update alexa endpoint to new URL
+run python3 weaverv2.py
+
+if you force quit weaver killall python3 processes
+
 Weaver is main + Alexa backed 
 Cv controller does everything needing opencv
 Heartbeatcontorller is bonus fun thing 
