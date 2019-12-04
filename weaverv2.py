@@ -31,8 +31,6 @@ allQueues.append(heartbeatQueue)
 allQueues.append(chatQueue)
 allQueues.append(checkChatQueueQueue)
 
-globalDummyLock = False
-
 @app.route('/')
 def hello_world():
 	return "Flask Server is Online!"
@@ -76,15 +74,9 @@ def lookAtMe():
 
 @ask.intent('stopActing')
 def stopActing():
-    global globalDummyLock
-    globalDummyLock = True
-    for queue in allQueues:
-        queue.put("terminate")
-    for thread in allThreads:
-        thread.join()
-    for thread in allThreads:
-        thread.start()
-    globalDummyLock = False
+    cvQueue.put("terminate")
+    cvTh.join()
+    cvTh.start()
     return statement('I\'m done following you')
 
 @ask.intent('callForHelp')
@@ -159,10 +151,7 @@ if __name__ == '__main__':
     for thread in allThreads:
         thread.start()
 
-    while True:
-        for thread in allThreads:
-            thread.join()
-        if not globalDummyLock:
-            break
+    for thread in allThreads:
+        thread.join()
     
     print("exiting")
