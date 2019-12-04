@@ -797,9 +797,12 @@ def run(cvQueue: Queue):
                 cvQueue.task_done()
                 cvQueue.task_done()
                 
+                print("getting my location")
                 x_cord, z_cord = cvObject.get_coordinates(cvQueue)
                 first_tag = aprilTags.getClosestTag(x_cord, z_cord, True)
 
+                print("first tag is " + str(first_tag))
+                print("last tag is " + str(final_target_tag_number))
                 cvObject.april_following(first_tag, 80, cvQueue, True, False)
                 i = 0
                 end_index = aprilTags.endOptions[final_target_tag_number]
