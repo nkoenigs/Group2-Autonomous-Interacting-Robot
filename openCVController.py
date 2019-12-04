@@ -394,7 +394,7 @@ class OpenCVController:
             if (key == ord("q")) or (not cvQueue.empty()) or inPosition:
                 self.send_serial_command(Direction.STOP, b'h');
                 # Restore webcam settings
-                if (not inPosition or (inPosition and isLast)):
+                if (not inPosition or (inPosition and isLastUse)):
                         self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, self.originalExposure)
                         self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, self.originalGain)
                         subprocess.check_call("v4l2-ctl -d /dev/video1 -c exposure_auto=3", shell=True)
@@ -783,7 +783,7 @@ def run(cvQueue: Queue):
                 cvQueue.put(z)
                 cvQueue.join()
                 print("nonblocking")
-                
+
             elif commandFromQueue == "personFollow":
                 cvObject.person_following(False, cvQueue)
             elif commandFromQueue == "photo":
