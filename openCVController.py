@@ -802,7 +802,7 @@ def run(cvQueue: Queue):
 
                 cvObject.april_following(first_tag, 80, cvQueue, True, False)
                 i = 0
-                end_index = aprilTags.endOptions(final_target_tag_number)
+                end_index = aprilTags.endOptions[final_target_tag_number]
                 for target_pair in aprilTags.aprilTargets:
                     cvObject.april_following(target_pair[0], target_pair[1], cvQueue, False, False)
                     if i == end_index:
