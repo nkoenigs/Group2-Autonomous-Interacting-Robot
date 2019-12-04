@@ -796,9 +796,10 @@ def run(cvQueue: Queue):
                 final_target_tag_radius = cvQueue.get()
                 cvQueue.task_done()
                 cvQueue.task_done()
+                is_first_use = True
                 for target_pair in aprilTags.aprilTargets:
-                    cvObject.april_following(target_pair[0], target_pair[1], cvQueue)
-                cvObject.april_following(final_target_tag_number, final_target_tag_radius, cvQueue)
+                    cvObject.april_following(target_pair[0], target_pair[1], cvQueue, is_first_use, False)
+                cvObject.april_following(final_target_tag_number, final_target_tag_radius, cvQueue, False, True)
             elif commandFromQueue == "halt":
                 pass
 
