@@ -228,7 +228,7 @@ class OpenCVController:
 
         # When turning to search for the desiredTag, we specify time to turn,
         # and time to wait after each semi-turn
-        searchingTimeToTurn = 0.5  # seconds
+        searchingTimeToTurn = 0.3  # seconds
         searchingTimeToHalt = 1.0  # seconds
         # TODO change the above for max turning and minimal halting that still works
 
