@@ -217,7 +217,7 @@ class OpenCVController:
         # Tune the webcam to better see april tags while robot is moving
         # (compensating for motion blur). Restore settings when done
         if (isFirstUse):
-                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.4)
+                self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_EXPOSURE, 0.5)
                 self.WebcamVideoStreamObject.stream.set(cv2.CAP_PROP_GAIN, 1)
 
         # Frame is considered to be 600x600 (after resize)
