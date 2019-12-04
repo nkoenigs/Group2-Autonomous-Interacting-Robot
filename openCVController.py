@@ -1,5 +1,3 @@
-# TODO add break condition for cv to avoid unnessesary calibration
-
 # import the necessary packages
 from queue import Queue
 import subprocess
@@ -526,7 +524,7 @@ class OpenCVController:
                     coordinateToReturn = max(coordinates_list, key=lambda x: x[2])  # Approach (2)
                     coordinateToReturn = (int(coordinateToReturn[0]), int(coordinateToReturn[1]))  # This stays regardless
                 else:
-                    coordinateToReturn = (1, 2)  # TODO set to some default outside the door
+                    coordinateToReturn = (0, -1)  # TODO set to some default outside the door
                     # TODO if this happens then we'll have to get moving too
                     #   ask team -  do we already move in response to our own distress? Can we make it do so
                     #   somehow but not always?
