@@ -80,6 +80,11 @@ def stopActing():
 
 @ask.intent('callForHelp')
 def callForHelp():
+    disTh = th.Thread(target= distressHandling)
+    disTh.start()
+    return statement('Sending distress signal')
+
+def distressHandling():
     # ask CV for my coords
     cvQueue.put("getCoordinates")
     cvQueue.join()
@@ -92,8 +97,6 @@ def callForHelp():
     chatQueue.put(x_cord)
     chatQueue.put(z_cord)
     chatQueue.join()
-    print('past join')
-    return statement('Distress signal sent at ' + x_cord + ', ' + z_cord)
 
 @ask.intent('getHeartbeat')
 def getHeartbeat():
