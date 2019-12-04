@@ -2,7 +2,7 @@ import math
 import json
 
 #this is a list of [tag nums, distances] to travel to
-aprilTargets = ([41, 80], [36, 80], [24, 30], [24, 30], [30, 80], [29, 80], [20, 80], [19, 80], [22, 80], [34, 80])
+aprilTargets = ([41, 80], [36, 80], [24, 40], [24, 40], [30, 80], [29, 80], [20, 80], [19, 80], [22, 80], [34, 80])
 endOptions = {24:2, 27:2, 25:2, 26:3, 30:4, 28:4, 31:5, 29:4, 33:6, 20:6, 19:7, 21:7, 35:7, 22:8, 34:8, 32:9}
 
 #finds the closes tag to a point
