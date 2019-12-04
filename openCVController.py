@@ -410,8 +410,8 @@ class OpenCVController:
 
         # When turning to search for the desiredTag, we specify time to turn,
         # and time to wait after each semi-turn
-        searchingTimeToTurn = 2.5  # seconds
-        searchingTimeToHalt = 2.5  # seconds
+        searchingTimeToTurn = 0.5  # seconds
+        searchingTimeToHalt = 1.0  # seconds
         # TODO change the above for max turning and minimal halting that still works
 
         options = apriltag.DetectorOptions(
@@ -443,7 +443,7 @@ class OpenCVController:
         # Variables for final decision
         coordinates_list = []
         iterationNumber = 1
-        numIterations = 5
+        numIterations = 10
 
         while True:
             # Rotate camera by going left by some amount (TODO fine tune)
@@ -802,14 +802,14 @@ def run(cvQueue: Queue):
 
 
 #if __name__ == "__main__":
-    #classObject = OpenCVController()
+   # classObject = OpenCVController()
     #cvQueue = Queue()
     # classObject.runningPersonFollowing = True
     #classObject.april_following(22, 80,  cvQueue)
     #print("here?")
     #classObject.april_following(39, 80,  cvQueue)
     #classObject.person_following(True,  cvQueue)
-    #print(str(classObject.get_coordinates()))
+   # print(str(classObject.get_coordinates(cvQueue)))
     #classObject.cleanup_resources()
     #classObject.take_photo(cvQueue)
     #exit()
