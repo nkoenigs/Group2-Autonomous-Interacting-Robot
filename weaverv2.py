@@ -126,6 +126,7 @@ def checkChatQueue():
             if request == "terminate":
                 chatQueue.put(request)
             elif request == "receivedDistress":
+                print("i got distress sign")
                 x_cord = chatQueue.get()
                 z_cord = chatQueue.get()
                 chatQueue.task_done()
