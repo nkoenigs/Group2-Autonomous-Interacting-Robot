@@ -1,6 +1,7 @@
 #include "Arduino.h"
 #include "Ultrasound.h"
 
+// Class Constructor
 Ultrasound::Ultrasound(int pin)
 {
   _pin = pin;

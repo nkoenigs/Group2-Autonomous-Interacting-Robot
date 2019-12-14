@@ -1,17 +1,18 @@
+// Authors - Nikhil Uplekar, Nathan Koenigsmark, Huy Do
+// ENEE408I Fall 2019 Group 2
+
 // Code for slave ardino, takes serial inputs, runs RTOS to multitask
 
 // Order API (no whitespace please. Just the newlines)
-// forward -> f
-// left -> l
-// right -> r
-// backwards -> b
-// halt -> h
-// autoOn -> o
-// autoOff -> z
-// personFollow -> p
-// aprilFollow -> a
-
-// terminate, halt, personFollow, eyeballFollow, aprilFollow
+//  forward -> f
+//  left -> l
+//  right -> r
+//  backwards -> b
+//  halt -> h
+//  autoOn -> o
+//  autoOff -> z
+//  personFollow -> p
+//  aprilFollow -> a
 
 #include <Arduino_FreeRTOS.h>
 #include "MotorControl.h"
@@ -261,44 +262,30 @@ void driveACR(void *pvParameters) {
           // TODO - for now lets just respond to current serial commands
           respondToCurrDir();
 
-        // Check where the danger is...       
-        if (centerDistance <= STOP_DISTANCE_CENTER) { // Danger at center...
-          // Check whether we should go left or right
-          if (leftDistance <= rightDistance) { // Right has more room than left, so go right.
+          // Check where the danger is...
+          /*       
+          if (centerDistance <= STOP_DISTANCE_CENTER) { // Danger at center...
+            // Check whether we should go left or right
+            if (leftDistance <= rightDistance) { // Right has more room than left, so go right.
+                lastCommandFromSerial = false;  
+                go_right();
+            }
+            else { // Left has more room than right, so go left.
+                lastCommandFromSerial = false;    
+                go_left();
+            }
+          }
+          else if (leftDistance <= STOP_DISTANCE_SIDE) { // Issue @ left, so go right
               lastCommandFromSerial = false;  
               go_right();
           }
-          else { // Left has more room than right, so go left.
-              lastCommandFromSerial = false;    
+          else if (rightDistance <= STOP_DISTANCE_SIDE) { // Issue @ right, so go left
+              lastCommandFromSerial = false;  
               go_left();
           }
-        }
-        else if (leftDistance <= STOP_DISTANCE_SIDE) { // Issue @ left, so go right
-            lastCommandFromSerial = false;  
-            go_right();
-        }
-        else if (rightDistance <= STOP_DISTANCE_SIDE) { // Issue @ right, so go left
-            lastCommandFromSerial = false;  
-            go_left();
-        }
-        else { // No issue - this shouldn't be possible
-            Serial.println("error: this shouldn't be possible"); 
-        }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-          
+          else { // No issue - this shouldn't be possible
+              Serial.println("error: this shouldn't be possible"); 
+          }*/
         }
         else { // Neither followType matched... not possible
           Serial.println("ERROR: followType had no match"); 
@@ -317,6 +304,8 @@ void driveACR(void *pvParameters) {
 }
 
 
+// The code below is old code used to have the robot free roam around the room while avoiding anything
+// that falls into its path
 
 //        // Check where the danger is...
 //        

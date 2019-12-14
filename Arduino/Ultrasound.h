@@ -3,6 +3,8 @@
 
 #include "Arduino.h"
 
+// Header file for Ultrasound.cpp
+
 class Ultrasound
 {
   public:
