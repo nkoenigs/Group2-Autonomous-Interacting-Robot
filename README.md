@@ -13,7 +13,7 @@ Heartbeatcontorller is bonus fun thing
 Chat handles robot to robot comms
 April is functions and constants for swarming
 
-@other groups
+@other-groups
 Feel free to take weaver, 
 and look at how to integrate other
 Scripts as processes and threads.
