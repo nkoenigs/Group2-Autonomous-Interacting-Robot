@@ -8,7 +8,7 @@ my_username = "WoodyRobot"
 
 HEADER_LENGTH = 10
 
-IP = "10.104.65.110"
+IP = "10.104.20.243"
 PORT = 1234
 
 def create_header(strLen, headLen):

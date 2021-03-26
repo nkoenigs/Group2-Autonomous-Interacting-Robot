@@ -76,10 +76,15 @@ def lookAtMe():
 def stopActing():
     cvQueue.put("halt")
     cvQueue.join()
-    return statement('Im done following you')
+    return statement('I\'m done following you')
 
 @ask.intent('callForHelp')
 def callForHelp():
+    disTh = th.Thread(target= distressHandling)
+    disTh.start()
+    return statement('Sending distress signal')
+
+def distressHandling():
     # ask CV for my coords
     cvQueue.put("getCoordinates")
     cvQueue.join()
@@ -92,7 +97,7 @@ def callForHelp():
     chatQueue.put(x_cord)
     chatQueue.put(z_cord)
     chatQueue.join()
-    return statement('Distress signal sent')
+    print("finished bonus thread")
 
 @ask.intent('getHeartbeat')
 def getHeartbeat():
@@ -101,6 +106,12 @@ def getHeartbeat():
         pass
     heartrate = heartbeatQueue.get()
     return statement("Your heartrate is " + str(heartrate) + " beats per minute")
+
+@ask.intent('takePhoto')
+def takePhoto():
+    cvQueue.put('photo')
+    cvQueue.join()
+    return statement("Your photo will be taken and emailed to you")
 
 def checkChatQueue():
     threadActive = True
@@ -115,25 +126,17 @@ def checkChatQueue():
             if request == "terminate":
                 chatQueue.put(request)
             elif request == "receivedDistress":
+                print("i got distress sign")
                 x_cord = chatQueue.get()
                 z_cord = chatQueue.get()
                 chatQueue.task_done()
                 chatQueue.task_done()
-                aprilTh = th.Thread(target= aprilController, args= (x_cord, z_cord, ))
-                aprilTh.daemon = True
-                aprilTh.start()
-
-def aprilController(x_cord, z_cord):
-    for target_tuple in aprilTags.aprilTargets:
-        cvQueue.put("aprilFollow")
-        cvQueue.put(target_tuple[0])
-        cvQueue.put(target_tuple[1])
-        cvQueue.join()
-    final_target  = aprilTags.getClosestTag(x_cord, z_cord)
-    cvQueue.put("aprilFollow")
-    cvQueue.put(final_target[0])
-    cvQueue.put(final_target[1])
-    cvQueue.join()
+                final_target  = aprilTags.getClosestTag(x_cord, z_cord, False)
+                print("target dest: ", final_target[0], " ",final_target[1])
+                cvQueue.put("aprilFollow")
+                cvQueue.put(final_target[0])
+                cvQueue.put(final_target[1])
+                cvQueue.join()
 
 if __name__ == '__main__':
     alexaTh = th.Thread(target= app.run)

@@ -88,7 +88,7 @@ def process(heartRateObject, heartbeatQueue):
 def run(heartbeatQueue):    
     heartRateObject = HeartRate()    
     heartRateObject.start()
-    time.delay(2)
+    time.sleep(2)
     if redFlag:
        return
     t1 = threading.Thread(target=update_value, args=[heartRateObject], name="update") #This thread is for updating heart rate value
